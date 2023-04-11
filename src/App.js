@@ -4,7 +4,7 @@ import { FBXLoader } from 'https://cdn.skypack.dev/three@0.136/examples/jsm/load
 import { GLTFLoader } from 'https://cdn.skypack.dev/three@0.136/examples/jsm/loaders/GLTFLoader.js';
 import { GUI } from 'https://cdn.skypack.dev/lil-gui';
 
-import { SpringMassSystem1D, SpringMassSystem2D, MultipleSpringMassSystem } from './SpringMassSystem.js';
+import { SpringMassSystem1D, SpringMassSystem2D, MultipleSpringMassSystem, ParticleSystemFromCard } from './SpringMassSystem.js';
 
 export class App {
 
@@ -104,39 +104,75 @@ export class App {
         //this.options = {};
 
 
+        /*
+        this.loaderGLB.load('./data/hair-card-white.glb', (glb) => {
+            this.model = glb.scene;
+            this.scene.add(this.model);
+
+        });
+        */
+        /*
+        this.loaderGLB.load('./data/cone.glb', (glb) => {
+            this.model = glb.scene;
+            this.scene.add(this.model);
+            console.log(this.model.children[0].geometry.getAttribute('position'));
+        });
+        */
+        this.createHairCard();
         
-        var length = 5;
+        let position = this.cardMesh.geometry.getAttribute('position')
+
+        /*
+        let numOfVertices = position.count;
+        var length = numOfVertices/2;
         this.system = new MultipleSpringMassSystem(length);
         //scene.add(system.anchor);
         for (var i = 0; i < length; i++) {
             this.scene.add(this.system.particles[i]);
             this.scene.add(this.system.lines[i]);
         }
-        
-
-
-        /*
-        const radius = 0.1;
-        const widthSegments = 16;
-        const heightSegments = 16;
-
-        const geometry = new THREE.SphereBufferGeometry(
-            radius,
-            widthSegments,
-            heightSegments
-        );
-
-        //const material = new MeshBasicMaterial();
-        const material = new THREE.MeshBasicMaterial({ color: 'purple' });
-
-        this.particle = new THREE.Mesh(geometry, material);
-        this.particle.position.set(0, 2, 0);
-
-        this.scene.add(this.particle);
         */
+        
+        this.particleSystem = new ParticleSystemFromCard(position);
+        console.log(this.particleSystem)
 
+        //this.createHairCone();
         // Start loop
         this.animate();
+    }
+
+    createHairCard() {
+        // Create a plane geometry with width and height of 1 unit
+        const cardGeometry = new THREE.PlaneGeometry(0.5, 1, 1, 3);
+        console.log(cardGeometry)
+        // Create a basic material with a color and no textures
+        const cardMaterial = new THREE.MeshBasicMaterial({ color: 0xffffff });
+
+        // Create a mesh by combining the geometry and material
+        this.cardMesh = new THREE.Mesh(cardGeometry, cardMaterial);
+
+        // Set the position of the mesh to be at the origin
+        this.cardMesh.position.set(0, 0, 0);
+
+        // Add the mesh to the scene
+        this.scene.add(this.cardMesh);
+    }
+
+    createHairCone() {
+        // Create a plane geometry with width and height of 1 unit
+        const coneGeometry = new THREE.ConeGeometry(0.1, 2.0, 4, 1, false);
+        console.log(coneGeometry)
+
+        // Create a basic material with a color and no textures
+        const coneMaterial = new THREE.MeshBasicMaterial({ color: 0xffffff });
+
+        // Create a mesh by combining the geometry and material
+        this.coneMesh = new THREE.Mesh(coneGeometry, coneMaterial);
+
+        this.coneMesh.position.set(0, 2, 0);
+
+        // Add the mesh to the scene
+        this.scene.add(this.coneMesh);
     }
 
     onWindowResize() {
@@ -153,7 +189,7 @@ export class App {
 
         requestAnimationFrame(this.animate.bind(this));
 
-        
+
         const delta = this.clock.getDelta();
         this.update(delta);
 
@@ -167,7 +203,59 @@ export class App {
     }
 
     update(delta) {
-        this.system.update(delta);
+        if (this.system) {
+            this.system.update(delta);
+        }
+
+        if (false) {
+            // Access the geometry data of the model
+            const geometry = this.model.children[0].geometry; // Assume there is only one child object
+
+            // Access the vertices of the model
+            const position = geometry.getAttribute('position');
+
+            // Access a single vertex position
+            const vertexIndex = 0; // Change this to access a different vertex
+            const x = position.getX(vertexIndex);
+            const y = position.getY(vertexIndex);
+            const z = position.getZ(vertexIndex);
+
+            // Log the vertex position to the console
+            console.log(`Vertex ${vertexIndex}: (${x}, ${y}, ${z})`);
+
+            // Modify the vertex position
+            const newX = x + 0.1; // Change this to modify the position in a different way
+            const newY = y + 0.1;
+            const newZ = z + 0.1;
+            position.setXYZ(vertexIndex, newX, newY, newZ);
+            position.needsUpdate = true;
+
+            // Log the new position of the vertex to the console
+            console.log(`new Vertex ${vertexIndex}: (${newX}, ${newY}, ${newZ})`);
+        }
+
+        if (this.particleSystem && this.cardMesh){
+            this.particleSystem.update(delta);
+            //console.log(this.particleSystem.particles[1])
+            for (var i = 0; i < this.particleSystem.particles.length; i++){
+                // Access the geometry data of the model
+                const position = this.cardMesh.geometry.getAttribute('position'); 
+                const particle = this.particleSystem.particles[i];
+
+                const vertexIndex = particle.index;
+                const newX = particle.position[0];
+                const newY = particle.position[1];
+                const newZ = particle.position[2];
+                
+                position.setXYZ(vertexIndex, newX, newY, newZ);
+                position.setXYZ(vertexIndex + 1, newX + 1, newY, newZ);
+                position.needsUpdate = true;
+
+            }
+
+
+        }
+
     }
 
 }

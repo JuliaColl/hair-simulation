@@ -5,7 +5,7 @@ var gravity = -9.81;
 var k = 400;
 var damping = 100;
 
-function createParticle() {
+function createParticle(color = 'purple') {
     const radius = 0.25;
     const widthSegments = 16;
     const heightSegments = 16;
@@ -17,7 +17,7 @@ function createParticle() {
     );
 
     //const material = new MeshBasicMaterial();
-    const material = new THREE.MeshBasicMaterial({ color: 'purple' });
+    const material = new THREE.MeshBasicMaterial({ color: color });
 
     const particle = new THREE.Mesh(geometry, material);
 
@@ -162,7 +162,11 @@ export class MultipleSpringMassSystem {
 
         for(var j = 0; j < length; j++){
             // init particles
-            var p = createParticle();
+            if (j == 0){
+                var p = createParticle('green');
+            }else{
+                var p = createParticle();
+            }
             p.velocity = [0,0];
             p.position.set(-3, 3, 0);
 
@@ -208,6 +212,74 @@ export class MultipleSpringMassSystem {
 
             // Update line           
             this.lines[j].geometry.setFromPoints([this.particles[j].position, endPos]);
+        }
+       
+
+    }
+}
+
+function Particle(p, v, i, m = 20){
+    this.position = [...p];
+    this.velocity = [...v];
+    this.index = i;
+    this.mass = m ;
+}
+
+export class ParticleSystemFromCard {
+    mass = null;
+
+    particles = [];
+    
+    constructor(position) {
+
+        this.mass = 20;
+        //this.velocity = [0, 0];
+
+        
+
+        for(var i = 0; i < position.count; i = i + 2){
+            // init particles
+            let velocity = [0,0,0]
+            let pos = [position.getX(i), position.getY(i), position.getZ(i)];
+
+            var p = new Particle(pos, velocity, i);
+            this.particles.push(p)
+        }
+        
+        //this.particles[0].position.set(-3, 3, 0);
+    }
+
+    update(delta) {
+        //
+        for(var j = 1; j < this.particles.length; j++){
+            let position1 = this.particles[j].position; 
+            let position2 = (j < this.particles.length - 1 ) ? this.particles[j+1].position : position1;
+    
+            let velocity1 = this.particles[j].velocity;
+            let velocity2 = (j < this.particles.length - 1 ) ? this.particles[j+1].velocity : [0,0];
+
+            // FORCE CALCULATIONS
+            var endPos = (j > 0) ? this.particles[j-1].position : this.particles[0].position;
+            var springForce1 = [-k*(position1[0] - endPos[0]), -k*(position1[1] - endPos[1])];
+            var dampingForce1 = [ damping * velocity1[0], damping * velocity1[1] ];
+            
+            var springForce2 =  [-k*(position2[0] - position1[0]), -k*(position2[1] - position1[1])];
+            var dampingForce2 = [ damping * velocity2[0], damping * velocity2[1] ];
+
+            var force = [0,0];
+            force[0] = springForce1[0] - dampingForce1[0] - springForce2[0] + dampingForce2[0]; 
+            force[1] = springForce1[1] + this.mass * gravity - dampingForce1[1] - springForce2[1] + dampingForce2[1];
+            
+            var acceleration = [force[0] / this.mass, force[1] / this.mass];
+            velocity1[0] = velocity1[0] + acceleration[0] * delta;
+            velocity1[1] = velocity1[1] + acceleration[1] * delta;
+    
+            // update particle position and velocity
+            this.particles[j].position[0] = position1[0] + velocity1[0] * delta;
+            this.particles[j].position[1] = position1[1] + velocity1[1] * delta;
+            this.particles[j].velocity[0] = velocity1[0];
+            this.particles[j].velocity[1] = velocity1[1];
+
         }
        
 
