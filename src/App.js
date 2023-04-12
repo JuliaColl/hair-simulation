@@ -111,30 +111,48 @@ export class App {
 
         });
         */
-        /*
-        this.loaderGLB.load('./data/cone.glb', (glb) => {
+        
+        this.loaderGLB.load('./data/hair-card-vertex.glb', (glb) => {
             this.model = glb.scene;
             this.scene.add(this.model);
-            console.log(this.model.children[0].geometry.getAttribute('position'));
+            console.log(this.model.children[0].geometry);
+            let position = this.model.children[0].geometry.getAttribute('position')
+            position.setY(0, position.getY(0) + 1);
+
+            this.particleSystem = new ParticleSystemFromCard(position);
+            //console.log(this.particleSystem)
         });
-        */
+        
+
+        /*
         this.createHairCard();
+        //this.cardMesh.rotateY(0.75);
+        //this.cardMesh.rotateX(1);
+        //this.cardMesh.rotateZ(0);
+        //this.cardMesh.updateMatrixWorld();
+
         
         let position = this.cardMesh.geometry.getAttribute('position')
 
+        this.particleSystem = new ParticleSystemFromCard(position);
+        console.log(this.particleSystem)
+        */
+        
         /*
-        let numOfVertices = position.count;
-        var length = numOfVertices/2;
+        //let numOfVertices = position.count;
+        //var length = numOfVertices/2;
+        var length = 4;
         this.system = new MultipleSpringMassSystem(length);
         //scene.add(system.anchor);
         for (var i = 0; i < length; i++) {
             this.scene.add(this.system.particles[i]);
-            this.scene.add(this.system.lines[i]);
+            if(i > 0){
+                this.scene.add(this.system.lines[i]);
+            }
+            
         }
         */
         
-        this.particleSystem = new ParticleSystemFromCard(position);
-        console.log(this.particleSystem)
 
         //this.createHairCone();
         // Start loop
@@ -152,7 +170,7 @@ export class App {
         this.cardMesh = new THREE.Mesh(cardGeometry, cardMaterial);
 
         // Set the position of the mesh to be at the origin
-        this.cardMesh.position.set(0, 0, 0);
+        this.cardMesh.position.set(0, 2, 0);
 
         // Add the mesh to the scene
         this.scene.add(this.cardMesh);
@@ -169,7 +187,7 @@ export class App {
         // Create a mesh by combining the geometry and material
         this.coneMesh = new THREE.Mesh(coneGeometry, coneMaterial);
 
-        this.coneMesh.position.set(0, 2, 0);
+        this.coneMesh.position.set(0, 0, 0);
 
         // Add the mesh to the scene
         this.scene.add(this.coneMesh);
@@ -207,31 +225,12 @@ export class App {
             this.system.update(delta);
         }
 
-        if (false) {
-            // Access the geometry data of the model
-            const geometry = this.model.children[0].geometry; // Assume there is only one child object
+        if (this.particleSystem && this.model) {
+            const position = this.model.children[0].geometry.getAttribute('position'); 
+            //position.setY(0, position.getY(0) + 0.1);
 
-            // Access the vertices of the model
-            const position = geometry.getAttribute('position');
-
-            // Access a single vertex position
-            const vertexIndex = 0; // Change this to access a different vertex
-            const x = position.getX(vertexIndex);
-            const y = position.getY(vertexIndex);
-            const z = position.getZ(vertexIndex);
-
-            // Log the vertex position to the console
-            console.log(`Vertex ${vertexIndex}: (${x}, ${y}, ${z})`);
-
-            // Modify the vertex position
-            const newX = x + 0.1; // Change this to modify the position in a different way
-            const newY = y + 0.1;
-            const newZ = z + 0.1;
-            position.setXYZ(vertexIndex, newX, newY, newZ);
             position.needsUpdate = true;
 
-            // Log the new position of the vertex to the console
-            console.log(`new Vertex ${vertexIndex}: (${newX}, ${newY}, ${newZ})`);
         }
 
         if (this.particleSystem && this.cardMesh){
@@ -248,7 +247,7 @@ export class App {
                 const newZ = particle.position[2];
                 
                 position.setXYZ(vertexIndex, newX, newY, newZ);
-                position.setXYZ(vertexIndex + 1, newX + 1, newY, newZ);
+                position.setXYZ(vertexIndex + 1, newX + particle.offset[0], newY + particle.offset[1], newZ + particle.offset[2]);
                 position.needsUpdate = true;
 
             }
