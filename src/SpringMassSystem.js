@@ -2,7 +2,7 @@ import * as THREE from 'https://cdn.skypack.dev/three@0.136';
 
 
 var gravity = -9.81;
-var k = 400;
+var k = 800;
 var damping = 100;
 
 function createParticle(color = 'purple') {

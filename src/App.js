@@ -112,19 +112,37 @@ export class App {
         });
         */
         
+        /*
         this.loaderGLB.load('./data/hair-card-vertex.glb', (glb) => {
             this.model = glb.scene;
             this.scene.add(this.model);
             console.log(this.model.children[0].geometry);
             let position = this.model.children[0].geometry.getAttribute('position')
-            position.setY(0, position.getY(0) + 1);
+            
+            //position.setY(10, position.getY(10) + 1);
+            //position.setY(11, position.getY(11) + 1);
 
-            this.particleSystem = new ParticleSystemFromCard(position);
+            //position.setY(20, position.getY(20) + 1);
+            //position.setY(21, position.getY(21) + 1);
+
+            //position.setY(0, position.getY(0) + 1);
+
+            //position.setY(2, position.getY(2) + 1);
+            //position.setY(1, position.getY(1) + 1);
+
+            //position.setY(1, position.getY(1) + 1);
+            //position.setY(2, position.getY(2) + 1);
+            //position.setY(3, position.getY(3) + 1);
+
+
+            //.particleSystem = new ParticleSystemFromCard(position);
             //console.log(this.particleSystem)
         });
+        */
+        
         
 
-        /*
+              
         this.createHairCard();
         //this.cardMesh.rotateY(0.75);
         //this.cardMesh.rotateX(1);
@@ -136,7 +154,7 @@ export class App {
 
         this.particleSystem = new ParticleSystemFromCard(position);
         console.log(this.particleSystem)
-        */
+        
         
         /*
         //let numOfVertices = position.count;
@@ -160,7 +178,7 @@ export class App {
     }
 
     createHairCard() {
-        // Create a plane geometry with width and height of 1 unit
+        // Create a plane geometry with width of 0.5 units and height of 1 unit
         const cardGeometry = new THREE.PlaneGeometry(0.5, 1, 1, 3);
         console.log(cardGeometry)
         // Create a basic material with a color and no textures
@@ -224,12 +242,32 @@ export class App {
         if (this.system) {
             this.system.update(delta);
         }
+        
+        if (false) {
 
-        if (this.particleSystem && this.model) {
+        //if (this.particleSystem && this.model) {
             const position = this.model.children[0].geometry.getAttribute('position'); 
             //position.setY(0, position.getY(0) + 0.1);
+            this.particleSystem.update(delta);
 
+            for (var i = 0; i < this.particleSystem.particles.length; i++){
+                // Access the geometry data of the model
+                //const position = this.cardMesh.geometry.getAttribute('position'); 
+                const position = this.model.children[0].geometry.getAttribute('position'); 
+ 
+                const particle = this.particleSystem.particles[i];
+
+                const vertexIndex = particle.index;
+                const newX = particle.position[0];
+                const newY = particle.position[1];
+                const newZ = particle.position[2];
+                
+                position.setXYZ(vertexIndex, newX, newY, newZ);
+                position.setXYZ(vertexIndex + 1, newX + particle.offset[0], newY + particle.offset[1], newZ + particle.offset[2]);
+
+            }
             position.needsUpdate = true;
+
 
         }
 
