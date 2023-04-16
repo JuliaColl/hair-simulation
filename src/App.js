@@ -1,6 +1,5 @@
 import * as THREE from 'https://cdn.skypack.dev/three@0.136';
 import { OrbitControls } from 'https://cdn.skypack.dev/three@0.136/examples/jsm/controls/OrbitControls.js';
-import { FBXLoader } from 'https://cdn.skypack.dev/three@0.136/examples/jsm/loaders/FBXLoader.js';
 import { GLTFLoader } from 'https://cdn.skypack.dev/three@0.136/examples/jsm/loaders/GLTFLoader.js';
 import { GUI } from 'https://cdn.skypack.dev/lil-gui';
 
@@ -11,7 +10,6 @@ export class App {
     constructor() {
 
         this.clock = new THREE.Clock();
-        this.loaderFBX = new FBXLoader();
         this.loaderGLB = new GLTFLoader();
 
         // main render attributes
@@ -20,8 +18,6 @@ export class App {
         this.camera = null;
         this.controls = null;
 
-        this.valid_extensions = ['fbx', 'glb', 'gltf'];
-        this.dropEnable = true;
         this.options = {};
     }
 
@@ -60,48 +56,15 @@ export class App {
         dirLight.castShadow = false;
         this.scene.add(dirLight);
 
-        /*
-        // Add text information
-        let info = document.createElement('div');
-        info.innerHTML = "Drop your files on screen";
-        let icon = document.createElement('i');
-        icon.innerHTML = "<i class='bi bi-arrow-down-square'></i>"
-        let info2 = document.createElement('div');
-        info2.innerHTML = "Supported files: [ " + this.valid_extensions + " ]";
-        this.info3 = document.createElement('div');
-        
-        info.style.fontFamily = info2.style.fontFamily = this.info3.style.fontFamily = "sans-serif";
-        info.style.color = info2.style.color = this.info3.style.color = icon.style.color = "white";
-        info.style.position = info2.style.position = this.info3.style.position = icon.style.position = 'absolute';
-        info.style.top = icon.style.top = 30 + 'px';
-        info.style.left = info2.style.left = this.info3.style.left = 40 + 'px';
-        icon.style.left = 225 + 'px';
-        info2.style.top = 55 + 'px';
-        this.info3.style.top = 75 + 'px';
-        info2.style.fontSize = this.info3.style.fontSize = "small";
-
-        document.body.appendChild(info);
-        document.body.appendChild(icon);
-        document.body.appendChild(info2);
-        document.body.appendChild(this.info3);
-        */
-
         // Set listeners and events
         window.addEventListener('resize', this.onWindowResize.bind(this));
 
-        /*
-        canvas.ondragover = (e) => {e.preventDefault(); e.stopPropagation(); return false;};
-        canvas.ondragend = (e) => {e.preventDefault(); e.stopPropagation(); return false;};
-        canvas.ondrop = (e) => this.onDrop(e);
-
-        let loadModal = document.getElementById("loading");
-        loadModal.ondrop = (e) => {e.preventDefault(); e.stopPropagation(); return false;};
-        loadModal.ondragover = (e) => {e.preventDefault(); e.stopPropagation(); return false;};
-        loadModal.ondragend = (e) => {e.preventDefault(); e.stopPropagation(); return false;};
-        */
-
-        // init gui functions
-        //this.options = {};
+        // init gui
+        this.options = {
+            dumping: 1,
+        };
+        let gui = new GUI().title('Evaluate Dataset Options');
+        gui.add(this.options, 'dumping', 0, 10).name('Dumping');
 
 
         /*
@@ -111,51 +74,56 @@ export class App {
 
         });
         */
-        
-        /*
-        this.loaderGLB.load('./data/hair-card-vertex.glb', (glb) => {
-            this.model = glb.scene;
-            this.scene.add(this.model);
-            console.log(this.model.children[0].geometry);
-            let position = this.model.children[0].geometry.getAttribute('position')
-            
-            //position.setY(10, position.getY(10) + 1);
-            //position.setY(11, position.getY(11) + 1);
 
-            //position.setY(20, position.getY(20) + 1);
-            //position.setY(21, position.getY(21) + 1);
+        // this.loaderGLB.load('./data/hair-card-vertex.glb', (glb) => {
+        //     this.model = glb.scene;
+        //     this.scene.add(this.model);
+        //     console.log(this.model.children[0].geometry);
+        //     let position = this.model.children[0].geometry.getAttribute('position')
 
-            //position.setY(0, position.getY(0) + 1);
+        //     // position.setY(10, position.getY(10) + 1);
+        //     //position.setY(11, position.getY(11) + 1);
 
-            //position.setY(2, position.getY(2) + 1);
-            //position.setY(1, position.getY(1) + 1);
+        //     //position.setY(20, position.getY(20) + 1);
+        //     //position.setY(21, position.getY(21) + 1);
 
-            //position.setY(1, position.getY(1) + 1);
-            //position.setY(2, position.getY(2) + 1);
-            //position.setY(3, position.getY(3) + 1);
+        //     //position.setY(0, position.getY(0) + 1);
+
+        //     //position.setY(2, position.getY(2) + 1);
+        //     //position.setY(1, position.getY(1) + 1);
+
+        //     //position.setY(1, position.getY(1) + 1);
+        //     //position.setY(2, position.getY(2) + 1);
+        //     //position.setY(3, position.getY(3) + 1);
 
 
-            //.particleSystem = new ParticleSystemFromCard(position);
-            //console.log(this.particleSystem)
-        });
-        */
-        
-        
+        //     //.particleSystem = new ParticleSystemFromCard(position);
+        //     //console.log(this.particleSystem)
+        // });
 
-              
+
+
+
         this.createHairCard();
         //this.cardMesh.rotateY(0.75);
-        //this.cardMesh.rotateX(1);
+        this.cardMesh.rotateX(-1);
         //this.cardMesh.rotateZ(0);
-        //this.cardMesh.updateMatrixWorld();
+        this.cardMesh.updateMatrixWorld();
 
-        
+
         let position = this.cardMesh.geometry.getAttribute('position')
+        let wPos = [];
+        // change to world
+        for(let i = 0; i < position.count; i++) {
+            let vertex = new THREE.Vector3();
+            vertex.fromBufferAttribute( position, i );
+            wPos.push( this.cardMesh.localToWorld(vertex) );
+        }
 
-        this.particleSystem = new ParticleSystemFromCard(position);
+        this.particleSystem = new ParticleSystemFromCard(wPos);
         console.log(this.particleSystem)
-        
-        
+
+
         /*
         //let numOfVertices = position.count;
         //var length = numOfVertices/2;
@@ -167,10 +135,10 @@ export class App {
             if(i > 0){
                 this.scene.add(this.system.lines[i]);
             }
-            
+
         }
         */
-        
+
 
         //this.createHairCone();
         // Start loop
@@ -179,13 +147,14 @@ export class App {
 
     createHairCard() {
         // Create a plane geometry with width of 0.5 units and height of 1 unit
-        const cardGeometry = new THREE.PlaneGeometry(0.5, 1, 1, 3);
+        const cardGeometry = new THREE.PlaneGeometry(0.5, 1, 1, 4);
         console.log(cardGeometry)
         // Create a basic material with a color and no textures
-        const cardMaterial = new THREE.MeshBasicMaterial({ color: 0xffffff });
+        const cardMaterial = new THREE.MeshBasicMaterial({ color: 0xffff00, side: THREE.DoubleSide });
 
         // Create a mesh by combining the geometry and material
         this.cardMesh = new THREE.Mesh(cardGeometry, cardMaterial);
+        this.cardMesh.frustumCulled = false;
 
         // Set the position of the mesh to be at the origin
         this.cardMesh.position.set(0, 2, 0);
@@ -229,11 +198,6 @@ export class App {
         const delta = this.clock.getDelta();
         this.update(delta);
 
-        /*
-        if ( this.mixer ) {s
-            this.mixer.update( delta );
-        }
-        */
 
         this.renderer.render(this.scene, this.camera);
     }
@@ -242,26 +206,26 @@ export class App {
         if (this.system) {
             this.system.update(delta);
         }
-        
+
         if (false) {
 
         //if (this.particleSystem && this.model) {
-            const position = this.model.children[0].geometry.getAttribute('position'); 
+            const position = this.model.children[0].geometry.getAttribute('position');
             //position.setY(0, position.getY(0) + 0.1);
             this.particleSystem.update(delta);
 
             for (var i = 0; i < this.particleSystem.particles.length; i++){
                 // Access the geometry data of the model
-                //const position = this.cardMesh.geometry.getAttribute('position'); 
-                const position = this.model.children[0].geometry.getAttribute('position'); 
- 
+                //const position = this.cardMesh.geometry.getAttribute('position');
+                const position = this.model.children[0].geometry.getAttribute('position');
+
                 const particle = this.particleSystem.particles[i];
 
                 const vertexIndex = particle.index;
                 const newX = particle.position[0];
                 const newY = particle.position[1];
                 const newZ = particle.position[2];
-                
+
                 position.setXYZ(vertexIndex, newX, newY, newZ);
                 position.setXYZ(vertexIndex + 1, newX + particle.offset[0], newY + particle.offset[1], newZ + particle.offset[2]);
 
@@ -276,16 +240,21 @@ export class App {
             //console.log(this.particleSystem.particles[1])
             for (var i = 0; i < this.particleSystem.particles.length; i++){
                 // Access the geometry data of the model
-                const position = this.cardMesh.geometry.getAttribute('position'); 
+                const position = this.cardMesh.geometry.getAttribute('position');
                 const particle = this.particleSystem.particles[i];
 
                 const vertexIndex = particle.index;
-                const newX = particle.position[0];
-                const newY = particle.position[1];
-                const newZ = particle.position[2];
-                
-                position.setXYZ(vertexIndex, newX, newY, newZ);
-                position.setXYZ(vertexIndex + 1, newX + particle.offset[0], newY + particle.offset[1], newZ + particle.offset[2]);
+                let aux = new THREE.Vector3(particle.position[0],  particle.position[1],  particle.position[2]);
+                let lPos = this.cardMesh.worldToLocal(aux);
+
+                // const newX = particle.position[0];
+                // const newY = particle.position[1];
+                // const newZ = particle.position[2];
+
+                //position.set(pos,);
+
+                position.setXYZ(vertexIndex, lPos.x, lPos.y, lPos.z);
+                position.setXYZ(vertexIndex + 1, lPos.x + particle.offset[0], lPos.y + particle.offset[1], lPos.z + particle.offset[2]);
                 position.needsUpdate = true;
 
             }

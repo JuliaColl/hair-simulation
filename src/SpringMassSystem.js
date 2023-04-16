@@ -244,16 +244,16 @@ export class ParticleSystemFromCard {
         this.mass = 20;
         //this.velocity = [0, 0];
 
-        for(var i = 0; i < position.count; i = i + 2){
+        for(var i = 0; i < position.length; i = i + 2){
             // init particles
             let velocity = [0,0,0]
-            let pos = [position.getX(i), position.getY(i), position.getZ(i)];
+            let pos = [position[i].x, position[i].y, position[i].z];
 
             var offset = [0,0,0]
 
-            offset[0] = position.getX(i + 1) - pos[0]
-            offset[1] = position.getY(i + 1) - pos[1]
-            offset[2] = position.getZ(i + 1) - pos[2]
+            offset[0] = position[i+1].x - pos[0];
+            offset[1] = position[i+1].y - pos[1];
+            offset[2] = position[i+1].z - pos[2];
 
             var p = new Particle(pos, velocity, i, offset);
             this.particles.push(p)
