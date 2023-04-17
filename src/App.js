@@ -7,7 +7,7 @@ import { SpringMassSystem1D, SpringMassSystem2D, MultipleSpringMassSystem, Parti
 
 //only one can be true
 const onlyMassSpringSystem = false;
-const onePlane = true;
+const onePlane = false;
 
 export class App {
 
@@ -24,7 +24,7 @@ export class App {
 
         this.options = {};
 
-        
+        this.hairCards = [];
 
         // fix time step
         this.dt = 0.01;
@@ -75,27 +75,62 @@ export class App {
             k: 800,
             gravity: -9.98,
             mass: 20,
-            set: () => {this.set()},
-            restart: () => {this.restart()}
+            set: () => { this.set() },
+            restart: () => { this.restart() }
         };
         let gui = new GUI().title('Evaluate Dataset Options');
         gui.add(this.options, 'damping', 0, 1000).name('Damping');
         gui.add(this.options, 'k', 0, 1000).name('K');
         gui.add(this.options, 'gravity', -100, 0).name('Gravity');
         gui.add(this.options, 'mass', 0, 100).name('Mass');
-        gui.add( this.options, 'set' ).name('Set params');; 
-        gui.add( this.options, 'restart' ).name('Restart demo');; 
+        gui.add(this.options, 'set').name('Set params');;
+        gui.add(this.options, 'restart').name('Restart demo');;
 
 
         // init models
-        if (onlyMassSpringSystem){
+        if (onlyMassSpringSystem) {
             this.initOnlyMassSpringSystem();
         }
-        else if (onePlane){
+
+        else if (onePlane) {
             this.initOnlyOnePlaneSytem();
         }
 
-        
+        else {
+            let numOfHairCards = 7;
+            for (let i = 0; i < numOfHairCards; i++) {
+                let cardGeometry = new THREE.PlaneGeometry(0.5, 1, 1, 4); // Create a plane geometry 
+                let cardMaterial = new THREE.MeshBasicMaterial({ color: 0xffff00, side: THREE.DoubleSide });
+
+                // Create a mesh by combining the geometry and material
+                let cardMesh = new THREE.Mesh(cardGeometry, cardMaterial);
+                cardMesh.frustumCulled = false;
+
+                // Set the position of the mesh to be at the origin
+                cardMesh.position.set(-numOfHairCards / 2 + i, 2, 0);
+                cardMesh.rotateX(-1);
+                cardMesh.updateMatrixWorld();
+
+                // init particle system
+                let position = cardMesh.geometry.getAttribute('position')
+                let initWPos = [];
+                // change to world position
+                for (let i = 0; i < position.count; i++) {
+                    let vertex = new THREE.Vector3();
+                    vertex.fromBufferAttribute(position, i);
+                    initWPos.push(cardMesh.localToWorld(vertex));
+                }
+
+                let particleSystem = new ParticleSystemFromCard(initWPos, this.options);
+
+                // Add the mesh to the scene
+                this.scene.add(cardMesh);
+                this.hairCards.push({mesh: cardMesh, system: particleSystem});
+            }
+
+        }
+
+
 
         // this.loaderGLB.load('./data/hair-card-vertex.glb', (glb) => {
         //     this.model = glb.scene;
@@ -122,17 +157,17 @@ export class App {
         //     //.particleSystem = new ParticleSystemFromCard(position);
         //     //console.log(this.particleSystem)
         // });
-     
+
 
         // Start loop
         this.animate();
     };
 
-    set(){
+    set() {
         this.particleSystem.setParams(this.options)
     };
 
-    restart(){
+    restart() {
         // CHECK: should I detete first the old particle system? 
         this.particleSystem = new ParticleSystemFromCard(this.initWPos, this.options);
 
@@ -173,20 +208,19 @@ export class App {
         this.scene.add(this.coneMesh);
     }
 
-    initOnlyMassSpringSystem(){
+    initOnlyMassSpringSystem() {
         var length = 4;
         this.particleSystem = new MultipleSpringMassSystem(length);
         for (var i = 0; i < length; i++) {
             this.scene.add(this.particleSystem.particles[i]);
-            if(i > 0){
+            if (i > 0) {
                 this.scene.add(this.particleSystem.lines[i]);
             }
-
         }
-        
+
     };
 
-    initOnlyOnePlaneSytem(){
+    initOnlyOnePlaneSytem() {
         this.createHairCard();
         //this.cardMesh.rotateY(0.75);
         this.cardMesh.rotateX(-1);
@@ -197,10 +231,10 @@ export class App {
         let position = this.cardMesh.geometry.getAttribute('position')
         this.initWPos = [];
         // change to world position
-        for(let i = 0; i < position.count; i++) {
+        for (let i = 0; i < position.count; i++) {
             let vertex = new THREE.Vector3();
-            vertex.fromBufferAttribute( position, i );
-            this.initWPos.push( this.cardMesh.localToWorld(vertex) );
+            vertex.fromBufferAttribute(position, i);
+            this.initWPos.push(this.cardMesh.localToWorld(vertex));
         }
 
         this.particleSystem = new ParticleSystemFromCard(this.initWPos, this.options);
@@ -222,11 +256,11 @@ export class App {
         requestAnimationFrame(this.animate.bind(this));
 
         let delta = this.clock.getDelta();
-        if( delta > 0.25)
+        if (delta > 0.25)
             delta = 0.25;
         this.accumulator += delta;
 
-        while(this.accumulator >= this.dt){
+        while (this.accumulator >= this.dt) {
             this.update(this.dt);
             this.accumulator -= this.dt;
         }
@@ -240,14 +274,25 @@ export class App {
             this.particleSystem.update(delta);
         }
 
+        
+        if (onePlane && this.particleSystem && this.cardMesh) {
+            this.updateHairCard(delta, {mesh: this.cardMesh, system: this.particleSystem});
+        }
+
+        else {
+            for(let i = 0; i < this.hairCards.length; i++){
+                this.updateHairCard(delta, this.hairCards[i]);
+            }
+        }
+
         if (false) {
 
-        //if (this.particleSystem && this.model) {
+            //if (this.particleSystem && this.model) {
             const position = this.model.children[0].geometry.getAttribute('position');
             //position.setY(0, position.getY(0) + 0.1);
             this.particleSystem.update(delta);
 
-            for (var i = 0; i < this.particleSystem.particles.length; i++){
+            for (var i = 0; i < this.particleSystem.particles.length; i++) {
                 // Access the geometry data of the model
                 //const position = this.cardMesh.geometry.getAttribute('position');
                 const position = this.model.children[0].geometry.getAttribute('position');
@@ -268,23 +313,19 @@ export class App {
 
         }
 
-        if (onePlane && this.particleSystem && this.cardMesh){
-            this.updateHairCard(delta);
-        }
-
     };
 
-    updateHairCard(delta){
-        this.particleSystem.update(delta);
-        //console.log(this.particleSystem.particles[1])
-        for (var i = 0; i < this.particleSystem.particles.length; i++){
+    updateHairCard(delta, {mesh, system}) {
+        system.update(delta);
+        //console.log(system.particles[1])
+        for (var i = 0; i < system.particles.length; i++) {
             // Access the geometry data of the model
-            const position = this.cardMesh.geometry.getAttribute('position');
-            const particle = this.particleSystem.particles[i];
+            const position = mesh.geometry.getAttribute('position');
+            const particle = system.particles[i];
 
             const vertexIndex = particle.index;
-            let aux = new THREE.Vector3(particle.position[0],  particle.position[1],  particle.position[2]);
-            let lPos = this.cardMesh.worldToLocal(aux);
+            let aux = new THREE.Vector3(particle.position[0], particle.position[1], particle.position[2]);
+            let lPos = mesh.worldToLocal(aux);
 
             position.setXYZ(vertexIndex, lPos.x, lPos.y, lPos.z);
             position.setXYZ(vertexIndex + 1, lPos.x + particle.offset[0], lPos.y + particle.offset[1], lPos.z + particle.offset[2]);
