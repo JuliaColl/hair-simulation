@@ -19,6 +19,9 @@ export class App {
         this.controls = null;
 
         this.options = {};
+
+        // fix time step
+        this.dt = 0.01;
     }
 
     init() {
@@ -194,9 +197,12 @@ export class App {
 
         requestAnimationFrame(this.animate.bind(this));
 
-
-        const delta = this.clock.getDelta();
-        this.update(delta);
+        let delta = this.clock.getDelta();
+        while(delta > 0.0){
+            let newDelta = (delta < this.dt) ? delta : this.dt;
+            this.update(newDelta);
+            delta -= newDelta;
+        }
 
 
         this.renderer.render(this.scene, this.camera);
