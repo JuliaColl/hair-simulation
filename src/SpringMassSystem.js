@@ -6,7 +6,7 @@ var k = 800;
 var damping = 100;
 
 function createParticle(color = 'purple') {
-    const radius = 0.25;
+    const radius = 0.1;
     const widthSegments = 16;
     const heightSegments = 16;
 
