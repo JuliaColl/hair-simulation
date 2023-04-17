@@ -5,6 +5,10 @@ import { GUI } from 'https://cdn.skypack.dev/lil-gui';
 
 import { SpringMassSystem1D, SpringMassSystem2D, MultipleSpringMassSystem, ParticleSystemFromCard } from './SpringMassSystem.js';
 
+//only one can be true
+const onlyMassSpringSystem = false;
+const onePlane = true;
+
 export class App {
 
     constructor() {
@@ -19,6 +23,8 @@ export class App {
         this.controls = null;
 
         this.options = {};
+
+        
 
         // fix time step
         this.dt = 0.01;
@@ -81,13 +87,15 @@ export class App {
         gui.add( this.options, 'restart' ).name('Restart demo');; 
 
 
-        /*
-        this.loaderGLB.load('./data/hair-card-white.glb', (glb) => {
-            this.model = glb.scene;
-            this.scene.add(this.model);
+        // init models
+        if (onlyMassSpringSystem){
+            this.initOnlyMassSpringSystem();
+        }
+        else if (onePlane){
+            this.initOnlyOnePlaneSytem();
+        }
 
-        });
-        */
+        
 
         // this.loaderGLB.load('./data/hair-card-vertex.glb', (glb) => {
         //     this.model = glb.scene;
@@ -114,45 +122,8 @@ export class App {
         //     //.particleSystem = new ParticleSystemFromCard(position);
         //     //console.log(this.particleSystem)
         // });
+     
 
-
-        this.createHairCard();
-        //this.cardMesh.rotateY(0.75);
-        this.cardMesh.rotateX(-1);
-        //this.cardMesh.rotateZ(0);
-        this.cardMesh.updateMatrixWorld();
-
-
-        let position = this.cardMesh.geometry.getAttribute('position')
-        this.initWPos = [];
-        // change to world
-        for(let i = 0; i < position.count; i++) {
-            let vertex = new THREE.Vector3();
-            vertex.fromBufferAttribute( position, i );
-            this.initWPos.push( this.cardMesh.localToWorld(vertex) );
-        }
-
-        this.particleSystem = new ParticleSystemFromCard(this.initWPos, this.options);
-        console.log(this.particleSystem)
-
-
-        /*
-        //let numOfVertices = position.count;
-        //var length = numOfVertices/2;
-        var length = 4;
-        this.system = new MultipleSpringMassSystem(length);
-        //scene.add(system.anchor);
-        for (var i = 0; i < length; i++) {
-            this.scene.add(this.system.particles[i]);
-            if(i > 0){
-                this.scene.add(this.system.lines[i]);
-            }
-
-        }
-        */
-
-
-        //this.createHairCone();
         // Start loop
         this.animate();
     };
@@ -202,6 +173,40 @@ export class App {
         this.scene.add(this.coneMesh);
     }
 
+    initOnlyMassSpringSystem(){
+        var length = 4;
+        this.particleSystem = new MultipleSpringMassSystem(length);
+        for (var i = 0; i < length; i++) {
+            this.scene.add(this.particleSystem.particles[i]);
+            if(i > 0){
+                this.scene.add(this.particleSystem.lines[i]);
+            }
+
+        }
+        
+    };
+
+    initOnlyOnePlaneSytem(){
+        this.createHairCard();
+        //this.cardMesh.rotateY(0.75);
+        this.cardMesh.rotateX(-1);
+        //this.cardMesh.rotateZ(0);
+        this.cardMesh.updateMatrixWorld();
+
+
+        let position = this.cardMesh.geometry.getAttribute('position')
+        this.initWPos = [];
+        // change to world position
+        for(let i = 0; i < position.count; i++) {
+            let vertex = new THREE.Vector3();
+            vertex.fromBufferAttribute( position, i );
+            this.initWPos.push( this.cardMesh.localToWorld(vertex) );
+        }
+
+        this.particleSystem = new ParticleSystemFromCard(this.initWPos, this.options);
+        console.log(this.particleSystem)
+    };
+
     onWindowResize() {
 
         this.camera.aspect = window.innerWidth / window.innerHeight;
@@ -231,8 +236,8 @@ export class App {
     }
 
     update(delta) {
-        if (this.system) {
-            this.system.update(delta);
+        if (onlyMassSpringSystem && this.particleSystem) {
+            this.particleSystem.update(delta);
         }
 
         if (false) {
@@ -263,33 +268,29 @@ export class App {
 
         }
 
-        if (this.particleSystem && this.cardMesh){
-            this.particleSystem.update(delta);
-            //console.log(this.particleSystem.particles[1])
-            for (var i = 0; i < this.particleSystem.particles.length; i++){
-                // Access the geometry data of the model
-                const position = this.cardMesh.geometry.getAttribute('position');
-                const particle = this.particleSystem.particles[i];
-
-                const vertexIndex = particle.index;
-                let aux = new THREE.Vector3(particle.position[0],  particle.position[1],  particle.position[2]);
-                let lPos = this.cardMesh.worldToLocal(aux);
-
-                // const newX = particle.position[0];
-                // const newY = particle.position[1];
-                // const newZ = particle.position[2];
-
-                //position.set(pos,);
-
-                position.setXYZ(vertexIndex, lPos.x, lPos.y, lPos.z);
-                position.setXYZ(vertexIndex + 1, lPos.x + particle.offset[0], lPos.y + particle.offset[1], lPos.z + particle.offset[2]);
-                position.needsUpdate = true;
-
-            }
-
-
+        if (onePlane && this.particleSystem && this.cardMesh){
+            this.updateHairCard(delta);
         }
 
+    };
+
+    updateHairCard(delta){
+        this.particleSystem.update(delta);
+        //console.log(this.particleSystem.particles[1])
+        for (var i = 0; i < this.particleSystem.particles.length; i++){
+            // Access the geometry data of the model
+            const position = this.cardMesh.geometry.getAttribute('position');
+            const particle = this.particleSystem.particles[i];
+
+            const vertexIndex = particle.index;
+            let aux = new THREE.Vector3(particle.position[0],  particle.position[1],  particle.position[2]);
+            let lPos = this.cardMesh.worldToLocal(aux);
+
+            position.setXYZ(vertexIndex, lPos.x, lPos.y, lPos.z);
+            position.setXYZ(vertexIndex + 1, lPos.x + particle.offset[0], lPos.y + particle.offset[1], lPos.z + particle.offset[2]);
+            position.needsUpdate = true;
+
+        }
     }
 
 }
