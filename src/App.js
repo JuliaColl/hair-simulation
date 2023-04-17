@@ -22,6 +22,7 @@ export class App {
 
         // fix time step
         this.dt = 0.01;
+        this.accumulator = 0.0;
     }
 
     init() {
@@ -198,10 +199,12 @@ export class App {
         requestAnimationFrame(this.animate.bind(this));
 
         let delta = this.clock.getDelta();
-        while(delta > 0.0){
-            let newDelta = (delta < this.dt) ? delta : this.dt;
-            this.update(newDelta);
-            delta -= newDelta;
+        this.accumulator += delta;
+
+        while(this.accumulator >= this.dt){
+            //let newDelta = (delta < this.dt) ? delta : this.dt;
+            this.update(this.dt);
+            this.accumulator -= this.dt;
         }
 
 
