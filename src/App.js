@@ -65,10 +65,20 @@ export class App {
 
         // init gui
         this.options = {
-            dumping: 1,
+            damping: 100,
+            k: 800,
+            gravity: -9.98,
+            mass: 20,
+            set: () => {this.set()},
+            restart: () => {this.restart()}
         };
         let gui = new GUI().title('Evaluate Dataset Options');
-        gui.add(this.options, 'dumping', 0, 10).name('Dumping');
+        gui.add(this.options, 'damping', 0, 1000).name('Damping');
+        gui.add(this.options, 'k', 0, 1000).name('K');
+        gui.add(this.options, 'gravity', -100, 0).name('Gravity');
+        gui.add(this.options, 'mass', 0, 100).name('Mass');
+        gui.add( this.options, 'set' ).name('Set params');; 
+        gui.add( this.options, 'restart' ).name('Restart demo');; 
 
 
         /*
@@ -106,8 +116,6 @@ export class App {
         // });
 
 
-
-
         this.createHairCard();
         //this.cardMesh.rotateY(0.75);
         this.cardMesh.rotateX(-1);
@@ -116,15 +124,15 @@ export class App {
 
 
         let position = this.cardMesh.geometry.getAttribute('position')
-        let wPos = [];
+        this.initWPos = [];
         // change to world
         for(let i = 0; i < position.count; i++) {
             let vertex = new THREE.Vector3();
             vertex.fromBufferAttribute( position, i );
-            wPos.push( this.cardMesh.localToWorld(vertex) );
+            this.initWPos.push( this.cardMesh.localToWorld(vertex) );
         }
 
-        this.particleSystem = new ParticleSystemFromCard(wPos);
+        this.particleSystem = new ParticleSystemFromCard(this.initWPos, this.options);
         console.log(this.particleSystem)
 
 
@@ -147,7 +155,17 @@ export class App {
         //this.createHairCone();
         // Start loop
         this.animate();
-    }
+    };
+
+    set(){
+        this.particleSystem.setParams(this.options)
+    };
+
+    restart(){
+        // CHECK: should I detete first the old particle system? 
+        this.particleSystem = new ParticleSystemFromCard(this.initWPos, this.options);
+
+    };
 
     createHairCard() {
         // Create a plane geometry with width of 0.5 units and height of 1 unit

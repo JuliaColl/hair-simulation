@@ -235,14 +235,20 @@ function Particle(p, v, i, o, m = 20){
 }
 
 export class ParticleSystemFromCard {
-    mass = null;
+    mass = 20;
 
     particles = [];
 
-    constructor(position) {
+    damping = 100;
+    k = 800;
+    gravity = -9.98;
 
-        this.mass = 20;
-        //this.velocity = [0, 0];
+    constructor(position, {damping, k, gravity, mass}) {
+
+        this.mass = mass;
+        this.damping = damping;
+        this.k = k;
+        this.gravity = gravity;
 
         for(var i = 0; i < position.length; i = i + 2){
             // init particles
@@ -260,6 +266,13 @@ export class ParticleSystemFromCard {
         }
         
         //this.particles[0].position.set(-3, 3, 0);
+    };
+
+    setParams({damping, k, gravity, mass}){
+        this.mass = mass;
+        this.damping = damping;
+        this.k = k;
+        this.gravity = gravity;
     }
 
     update(delta) {
@@ -273,15 +286,15 @@ export class ParticleSystemFromCard {
 
             // FORCE CALCULATIONS
             var endPos = (j > 0) ? this.particles[j-1].position : this.particles[0].position;
-            var springForce1 = [-k*(position1[0] - endPos[0]), -k*(position1[1] - endPos[1]), -k*(position1[2] - endPos[2])];
-            var dampingForce1 = [ damping * velocity1[0], damping * velocity1[1], damping * velocity1[2] ];
+            var springForce1 = [-this.k*(position1[0] - endPos[0]), -this.k*(position1[1] - endPos[1]), -this.k*(position1[2] - endPos[2])];
+            var dampingForce1 = [ this.damping * velocity1[0], this.damping * velocity1[1], this.damping * velocity1[2] ];
             
-            var springForce2 =  [-k*(position2[0] - position1[0]), -k*(position2[1] - position1[1]), -k*(position2[2] - position1[2])];
-            var dampingForce2 = [ damping * velocity2[0], damping * velocity2[1],damping * velocity2[2]];
+            var springForce2 =  [-this.k*(position2[0] - position1[0]), -this.k*(position2[1] - position1[1]), -this.k*(position2[2] - position1[2])];
+            var dampingForce2 = [ this.damping * velocity2[0], this.damping * velocity2[1],this.damping * velocity2[2]];
 
             var force = [0,0,0];
             force[0] = springForce1[0] - dampingForce1[0] - springForce2[0] + dampingForce2[0]; 
-            force[1] = springForce1[1] + this.mass * gravity - dampingForce1[1] - springForce2[1] + dampingForce2[1];
+            force[1] = springForce1[1] + this.mass * this.gravity - dampingForce1[1] - springForce2[1] + dampingForce2[1];
             force[2] = springForce1[2] - dampingForce1[2] - springForce2[2] + dampingForce2[2]; 
 
             var acceleration = [force[0] / this.mass, force[1] / this.mass, force[2] / this.mass];
