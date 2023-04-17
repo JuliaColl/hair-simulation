@@ -199,10 +199,11 @@ export class App {
         requestAnimationFrame(this.animate.bind(this));
 
         let delta = this.clock.getDelta();
+        if( delta > 0.25)
+            delta = 0.25;
         this.accumulator += delta;
 
         while(this.accumulator >= this.dt){
-            //let newDelta = (delta < this.dt) ? delta : this.dt;
             this.update(this.dt);
             this.accumulator -= this.dt;
         }
