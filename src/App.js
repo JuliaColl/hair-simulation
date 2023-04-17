@@ -9,6 +9,7 @@ import { SpringMassSystem1D, SpringMassSystem2D, MultipleSpringMassSystem, Parti
 const onlyMassSpringSystem = false;
 const onePlane = false;
 
+
 export class App {
 
     constructor() {
@@ -125,7 +126,7 @@ export class App {
 
                 // Add the mesh to the scene
                 this.scene.add(cardMesh);
-                this.hairCards.push({mesh: cardMesh, system: particleSystem});
+                this.hairCards.push({ mesh: cardMesh, system: particleSystem, initWPos: initWPos });
             }
 
         }
@@ -168,8 +169,17 @@ export class App {
     };
 
     restart() {
-        // CHECK: should I detete first the old particle system? 
-        this.particleSystem = new ParticleSystemFromCard(this.initWPos, this.options);
+        if (onePlane) {
+            // CHECK: should I detete first the old particle system? 
+            this.particleSystem = new ParticleSystemFromCard(this.initWPos, this.options);
+        }
+        
+        else {
+            for (let i = 0; i < this.hairCards.length; i++) {
+                this.hairCards[i].system = new ParticleSystemFromCard(this.hairCards[i].initWPos, this.options);
+            }
+        }
+
 
     };
 
@@ -274,13 +284,13 @@ export class App {
             this.particleSystem.update(delta);
         }
 
-        
+
         if (onePlane && this.particleSystem && this.cardMesh) {
-            this.updateHairCard(delta, {mesh: this.cardMesh, system: this.particleSystem});
+            this.updateHairCard(delta, { mesh: this.cardMesh, system: this.particleSystem });
         }
 
         else {
-            for(let i = 0; i < this.hairCards.length; i++){
+            for (let i = 0; i < this.hairCards.length; i++) {
                 this.updateHairCard(delta, this.hairCards[i]);
             }
         }
@@ -315,7 +325,7 @@ export class App {
 
     };
 
-    updateHairCard(delta, {mesh, system}) {
+    updateHairCard(delta, { mesh, system }) {
         system.update(delta);
         //console.log(system.particles[1])
         for (var i = 0; i < system.particles.length; i++) {
