@@ -74,10 +74,11 @@ export class App {
         this.modes = {
             MassSpring: 0,
             Plane: 1,
-            MultiPlane: 2
+            MultiPlane: 2,
+            Skull: 3
         }
 
-        this.currentMode = this.modes.MassSpring;
+        this.currentMode = this.modes.Skull;
 
         this.options = {
             damping: 100,
@@ -92,7 +93,7 @@ export class App {
 
 
         let gui = new GUI().title('Evaluate Dataset Options');
-        gui.add(this.options, 'mode', { MassSpring: this.modes.MassSpring, Plane: this.modes.Plane, MultiPlane: this.modes.MultiPlane }).name('Mode');
+        gui.add(this.options, 'mode', this.modes).name('Mode');
         gui.add(this.options, 'damping', 0, 1000).name('Damping');
         gui.add(this.options, 'k', 0, 1000).name('K');
         gui.add(this.options, 'gravity', -100, 0).name('Gravity');
@@ -112,6 +113,36 @@ export class App {
 
         else if (this.currentMode == this.modes.MultiPlane) {
             this.initMultiPlaneSytem();
+        }
+        else if (this.currentMode == this.modes.Skull) {
+            const geometry = new THREE.SphereGeometry(1, 32, 16);
+            const material = new THREE.PointsMaterial({size: 0.1, color: 'purple' });
+            const sphere = new THREE.Points(geometry, material);
+            sphere.position.set(0, 2, 0);
+            sphere.frustumCulled = false;
+            sphere.updateMatrixWorld();
+
+
+            let position = sphere.geometry.getAttribute('position')
+            //position.setY(100, position.getY(100) + 1);
+            //position.setY(110, position.getY(110) + 1);
+
+            let plane = this.createHairCard();
+            let {system, initWPos} = this.loadParticleSystemFromCard(plane);
+
+            let vertex = new THREE.Vector3();
+
+            vertex.fromBufferAttribute(position, 100);
+            let worldPos = sphere.localToWorld(vertex);
+
+            system.setAnchor([worldPos.x, worldPos.y, worldPos.z]);
+
+            this.scene.add(sphere);
+            this.scene.add(plane);
+
+            this.plane = plane;
+            this.system = system;
+
         }
 
         console.log(this.scene)
@@ -156,13 +187,13 @@ export class App {
     */
 
     restart() {
-        if (this.currentMode == this.options.mode) {
+        if (this.currentMode == this.options.mode) {  //same mode only upfate params of the scene
             if (this.options.mode == this.modes.MassSpring) {
                 this.particleSystem.setParams(this.options);
                 this.particleSystem.restart();
 
             }
-            
+
             if (this.options.mode == this.modes.Plane) {
                 // CHECK: should I detete first the old particle system? 
                 this.particleSystem = new ParticleSystemFromCard(this.initWPos, this.options);
@@ -202,21 +233,13 @@ export class App {
     };
 
     createHairCard() {
-        // Create a plane geometry with width of 0.5 units and height of 1 unit
         const cardGeometry = new THREE.PlaneGeometry(0.5, 1, 1, 4);
-        console.log(cardGeometry)
-        // Create a basic material with a color and no textures
         const cardMaterial = new THREE.MeshBasicMaterial({ color: 0xffff00, side: THREE.DoubleSide });
 
-        // Create a mesh by combining the geometry and material
-        this.cardMesh = new THREE.Mesh(cardGeometry, cardMaterial);
-        this.cardMesh.frustumCulled = false;
+        let cardMesh = new THREE.Mesh(cardGeometry, cardMaterial);
+        cardMesh.frustumCulled = false;
 
-        // Set the position of the mesh to be at the origin
-        this.cardMesh.position.set(0, 2, 0);
-
-        // Add the mesh to the scene
-        this.scene.add(this.cardMesh);
+        return cardMesh;
     }
 
     createHairCone() {
@@ -248,57 +271,52 @@ export class App {
 
     };
 
+    loadParticleSystemFromCard(mesh){
+        let position = mesh.geometry.getAttribute('position')
+        let initWPos = [];
+        // change to world position
+        for (let i = 0; i < position.count; i++) {
+            let vertex = new THREE.Vector3();
+            vertex.fromBufferAttribute(position, i);
+            initWPos.push(mesh.localToWorld(vertex));
+        }
+
+        return {system: new ParticleSystemFromCard(initWPos, this.options), initWPos: initWPos};
+    }
+
     initOnlyOnePlaneSytem() {
-        this.createHairCard();
+        this.cardMesh = this.createHairCard();
+        
+        this.cardMesh.position.set(0, 2, 0);
         //this.cardMesh.rotateY(0.75);
         this.cardMesh.rotateX(-1);
         //this.cardMesh.rotateZ(0);
         this.cardMesh.updateMatrixWorld();
 
+        // Add the mesh to the scene
+        this.scene.add(this.cardMesh);
 
-        let position = this.cardMesh.geometry.getAttribute('position')
-        this.initWPos = [];
-        // change to world position
-        for (let i = 0; i < position.count; i++) {
-            let vertex = new THREE.Vector3();
-            vertex.fromBufferAttribute(position, i);
-            this.initWPos.push(this.cardMesh.localToWorld(vertex));
-        }
+        ({system: this.particleSystem, initWPos: this.initWPos} = this.loadParticleSystemFromCard(this.cardMesh));
 
-        this.particleSystem = new ParticleSystemFromCard(this.initWPos, this.options);
         console.log(this.particleSystem)
+
     };
 
     initMultiPlaneSytem() {
         let numOfHairCards = 7;
         for (let i = 0; i < numOfHairCards; i++) {
-            let cardGeometry = new THREE.PlaneGeometry(0.5, 1, 1, 4); // Create a plane geometry 
-            let cardMaterial = new THREE.MeshBasicMaterial({ color: 0xffff00, side: THREE.DoubleSide });
-
-            // Create a mesh by combining the geometry and material
-            let cardMesh = new THREE.Mesh(cardGeometry, cardMaterial);
-            cardMesh.frustumCulled = false;
+            
+            let cardMesh = this.createHairCard();
 
             // Set the position of the mesh to be at the origin
             cardMesh.position.set(-numOfHairCards / 2 + i, 2, 0);
             cardMesh.rotateX(-1);
             cardMesh.updateMatrixWorld();
-
-            // init particle system
-            let position = cardMesh.geometry.getAttribute('position')
-            let initWPos = [];
-            // change to world position
-            for (let i = 0; i < position.count; i++) {
-                let vertex = new THREE.Vector3();
-                vertex.fromBufferAttribute(position, i);
-                initWPos.push(cardMesh.localToWorld(vertex));
-            }
-
-            let particleSystem = new ParticleSystemFromCard(initWPos, this.options);
-
+           
+            let {system, initWPos} = this.loadParticleSystemFromCard(cardMesh);
             // Add the mesh to the scene
             this.scene.add(cardMesh);
-            this.hairCards.push({ mesh: cardMesh, system: particleSystem, initWPos: initWPos });
+            this.hairCards.push({ mesh: cardMesh, system: system, initWPos: initWPos });
         }
     }
 
@@ -340,10 +358,14 @@ export class App {
             this.updateHairCard(delta, { mesh: this.cardMesh, system: this.particleSystem });
         }
 
-        else if (this.currentMode == this.modes.MultiPlane){
+        else if (this.currentMode == this.modes.MultiPlane) {
             for (let i = 0; i < this.hairCards.length; i++) {
                 this.updateHairCard(delta, this.hairCards[i]);
             }
+        }
+
+        else if (this.currentMode == this.modes.Skull){
+            this.updateHairCard(delta, { mesh: this.plane, system: this.system });
         }
 
         if (false) {

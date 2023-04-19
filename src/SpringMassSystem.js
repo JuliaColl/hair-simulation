@@ -298,6 +298,10 @@ export class ParticleSystemFromCard {
         this.gravity = gravity;
     }
 
+    setAnchor(position){
+        this.particles[0].position = [...position];
+    }
+
     update(delta) {
         //
         for(var j = 1; j < this.particles.length; j++){
