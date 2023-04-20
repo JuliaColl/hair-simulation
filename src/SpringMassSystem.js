@@ -284,7 +284,7 @@ export class ParticleSystemFromCard {
             offset[1] = position[i+1].y - pos[1];
             offset[2] = position[i+1].z - pos[2];
 
-            var p = new Particle(pos, velocity, i, offset);
+            var p = new Particle([pos[0] + offset[0]/2, pos[1] + offset[1]/2, pos[2] + offset[2]/2 ], velocity, i, offset);
             this.particles.push(p)
         }
         
@@ -301,6 +301,7 @@ export class ParticleSystemFromCard {
     setAnchor(position){
         this.particles[0].position = [...position];
     }
+
 
     update(delta) {
         //

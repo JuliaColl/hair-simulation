@@ -5,10 +5,31 @@ import { GUI } from 'https://cdn.skypack.dev/lil-gui';
 
 import { SpringMassSystem1D, SpringMassSystem2D, MultipleSpringMassSystem, ParticleSystemFromCard } from './SpringMassSystem.js';
 
-//only one can be true
-const onlyMassSpringSystem = false;
-const onePlane = false;
+function entitySystem(mesh, system, initWPos) {
+    this.mesh = mesh;
+    this.system = system;
+    this.initWPos = initWPos;
+    this.skullIndex = null;
 
+    this.setPosition = (x, y, z) => {
+        this.mesh.position.set(x, y, z);
+        this.mesh.updateMatrixWorld();
+        this.system.setAnchor([x, y, z]);
+    }
+}
+
+function skullSystem(sphereMesh, hairCards) {
+    this.skull = sphereMesh;
+    this.hairCards = hairCards;
+
+    this.moveSkull = (x, y, z) => {
+        this.skull.position.set(x, y, z);
+        for (let i = 0; i < this.hairCards.length; i++) {
+            this.hairCards[i].setPosition(x, y, z);
+        }
+    }
+
+}
 
 export class App {
 
@@ -116,7 +137,7 @@ export class App {
         }
         else if (this.currentMode == this.modes.Skull) {
             const geometry = new THREE.SphereGeometry(1, 32, 16);
-            const material = new THREE.PointsMaterial({size: 0.1, color: 'purple' });
+            const material = new THREE.PointsMaterial({ size: 0.1, color: 'purple' });
             const sphere = new THREE.Points(geometry, material);
             sphere.position.set(0, 2, 0);
             sphere.frustumCulled = false;
@@ -127,22 +148,28 @@ export class App {
             //position.setY(100, position.getY(100) + 1);
             //position.setY(110, position.getY(110) + 1);
 
-            let plane = this.createHairCard();
-            let {system, initWPos} = this.loadParticleSystemFromCard(plane);
+            let hairCards = [];
 
-            let vertex = new THREE.Vector3();
+            let numOfHairCards = 8;
+            for (let i = 0; i < numOfHairCards; i++) {
+                let plane = this.createHairCard();
+                let { system, initWPos } = this.loadParticleSystemFromCard(plane);
 
-            vertex.fromBufferAttribute(position, 100);
-            let worldPos = sphere.localToWorld(vertex);
+                let vertex = new THREE.Vector3();
 
-            system.setAnchor([worldPos.x, worldPos.y, worldPos.z]);
+                vertex.fromBufferAttribute(position, 200 + i*10);
+                let worldPos = sphere.localToWorld(vertex);
 
-            this.scene.add(sphere);
-            this.scene.add(plane);
+                plane.position.set(worldPos.x, worldPos.y, worldPos.z);
+                plane.updateMatrixWorld();
+                system.setAnchor([worldPos.x, worldPos.y, worldPos.z]);
 
-            this.plane = plane;
-            this.system = system;
+                this.scene.add(sphere);
+                this.scene.add(plane);
 
+                hairCards.push(new entitySystem(plane, system, initWPos));
+            }
+            this.skull = new skullSystem(sphere, hairCards);
         }
 
         console.log(this.scene)
@@ -196,7 +223,7 @@ export class App {
 
             if (this.options.mode == this.modes.Plane) {
                 // CHECK: should I detete first the old particle system? 
-                this.particleSystem = new ParticleSystemFromCard(this.initWPos, this.options);
+                this.hairCard.system = new ParticleSystemFromCard(this.initWPos, this.options);
             }
 
             else if (this.options.mode == this.modes.MultiPlane) {
@@ -204,6 +231,12 @@ export class App {
                     this.hairCards[i].system = new ParticleSystemFromCard(this.hairCards[i].initWPos, this.options);
                 }
             }
+
+            else if (this.options.mode == this.modes.Skull) {
+                //this.hairCard.setPosition(0,2,0);
+
+            }
+
         }
 
         else {
@@ -211,7 +244,7 @@ export class App {
             for (let i = this.scene.children.length - 1; i >= 0; i--) {
                 let child = this.scene.children[i]
 
-                if (child.type === 'Mesh' || child.type === 'Line')  // check if the child is a mesh
+                if (child.type === 'Mesh' || child.type === 'Line' || child.type === 'Points')  // check if the child is a mesh
                     this.scene.remove(child)
             }
 
@@ -271,7 +304,7 @@ export class App {
 
     };
 
-    loadParticleSystemFromCard(mesh){
+    loadParticleSystemFromCard(mesh) {
         let position = mesh.geometry.getAttribute('position')
         let initWPos = [];
         // change to world position
@@ -281,42 +314,41 @@ export class App {
             initWPos.push(mesh.localToWorld(vertex));
         }
 
-        return {system: new ParticleSystemFromCard(initWPos, this.options), initWPos: initWPos};
+        return { system: new ParticleSystemFromCard(initWPos, this.options), initWPos: initWPos };
     }
 
     initOnlyOnePlaneSytem() {
-        this.cardMesh = this.createHairCard();
-        
-        this.cardMesh.position.set(0, 2, 0);
-        //this.cardMesh.rotateY(0.75);
-        this.cardMesh.rotateX(-1);
-        //this.cardMesh.rotateZ(0);
-        this.cardMesh.updateMatrixWorld();
+        let cardMesh = this.createHairCard();
+
+        cardMesh.position.set(0, 2, 0);
+        //cardMesh.rotateY(0.75);
+        cardMesh.rotateX(-1);
+        //cardMesh.rotateZ(0);
+        cardMesh.updateMatrixWorld();
 
         // Add the mesh to the scene
-        this.scene.add(this.cardMesh);
+        this.scene.add(cardMesh);
 
-        ({system: this.particleSystem, initWPos: this.initWPos} = this.loadParticleSystemFromCard(this.cardMesh));
+        let { system, initWPos } = this.loadParticleSystemFromCard(cardMesh);
 
-        console.log(this.particleSystem)
-
+        this.hairCard = new entitySystem(cardMesh, system, initWPos);
     };
 
     initMultiPlaneSytem() {
         let numOfHairCards = 7;
         for (let i = 0; i < numOfHairCards; i++) {
-            
+
             let cardMesh = this.createHairCard();
 
             // Set the position of the mesh to be at the origin
             cardMesh.position.set(-numOfHairCards / 2 + i, 2, 0);
             cardMesh.rotateX(-1);
             cardMesh.updateMatrixWorld();
-           
-            let {system, initWPos} = this.loadParticleSystemFromCard(cardMesh);
+
+            let { system, initWPos } = this.loadParticleSystemFromCard(cardMesh);
             // Add the mesh to the scene
             this.scene.add(cardMesh);
-            this.hairCards.push({ mesh: cardMesh, system: system, initWPos: initWPos });
+            this.hairCards.push(new entitySystem(cardMesh, system, initWPos));
         }
     }
 
@@ -354,8 +386,8 @@ export class App {
         }
 
 
-        if (this.currentMode == this.modes.Plane && this.particleSystem && this.cardMesh) {
-            this.updateHairCard(delta, { mesh: this.cardMesh, system: this.particleSystem });
+        if (this.currentMode == this.modes.Plane && this.hairCard) {
+            this.updateHairCard(delta, this.hairCard);
         }
 
         else if (this.currentMode == this.modes.MultiPlane) {
@@ -364,8 +396,10 @@ export class App {
             }
         }
 
-        else if (this.currentMode == this.modes.Skull){
-            this.updateHairCard(delta, { mesh: this.plane, system: this.system });
+        else if (this.currentMode == this.modes.Skull) {
+            for (let i = 0; i < this.skull.hairCards.length; i++) {
+                this.updateHairCard(delta, this.skull.hairCards[i]);
+            }
         }
 
         if (false) {
@@ -410,8 +444,8 @@ export class App {
             let aux = new THREE.Vector3(particle.position[0], particle.position[1], particle.position[2]);
             let lPos = mesh.worldToLocal(aux);
 
-            position.setXYZ(vertexIndex, lPos.x, lPos.y, lPos.z);
-            position.setXYZ(vertexIndex + 1, lPos.x + particle.offset[0], lPos.y + particle.offset[1], lPos.z + particle.offset[2]);
+            position.setXYZ(vertexIndex, lPos.x - particle.offset[0] / 2, lPos.y - particle.offset[1] / 2, lPos.z - particle.offset[2] / 2);
+            position.setXYZ(vertexIndex + 1, lPos.x + particle.offset[0] / 2, lPos.y + particle.offset[1] / 2, lPos.z + particle.offset[2] / 2);
             position.needsUpdate = true;
 
         }
