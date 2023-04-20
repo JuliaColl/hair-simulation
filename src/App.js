@@ -100,26 +100,26 @@ export class App {
         // Set listeners and events
         window.addEventListener('resize', this.onWindowResize.bind(this));
         document.onkeydown = (e) => {
-            let delta = 0.05;
-            if (e.code === 'ArrowUp'){
-                let position = this.skull.skull.position;
-                console.log(position);  
-                this.skull.moveSkull(position.x, position.y + delta, position.z); //TODO: add dt somewhere in the future if I want to keep it
-            }
-            else if (e.code === 'ArrowDown'){
-                let position = this.skull.skull.position;
-                console.log(position);  
-                this.skull.moveSkull(position.x, position.y - delta, position.z); 
-            }
-            else if (e.code === 'ArrowLeft'){
-                let position = this.skull.skull.position;
-                console.log(position);  
-                this.skull.moveSkull(position.x - delta, position.y, position.z); 
-            }
-            else if (e.code === 'ArrowRight'){
-                let position = this.skull.skull.position;
-                console.log(position);  
-                this.skull.moveSkull(position.x + delta, position.y, position.z); 
+            if (this.currentMode == this.modes.Skull) {
+
+
+                let delta = 0.05;
+                if (e.code === 'ArrowUp') {
+                    let position = this.skull.skull.position;
+                    this.skull.moveSkull(position.x, position.y + delta, position.z); //TODO: add dt somewhere in the future if I want to keep it
+                }
+                else if (e.code === 'ArrowDown') {
+                    let position = this.skull.skull.position;
+                    this.skull.moveSkull(position.x, position.y - delta, position.z);
+                }
+                else if (e.code === 'ArrowLeft') {
+                    let position = this.skull.skull.position;
+                    this.skull.moveSkull(position.x - delta, position.y, position.z);
+                }
+                else if (e.code === 'ArrowRight') {
+                    let position = this.skull.skull.position;
+                    this.skull.moveSkull(position.x + delta, position.y, position.z);
+                }
             }
         };
 
@@ -168,41 +168,7 @@ export class App {
             this.initMultiPlaneSytem();
         }
         else if (this.currentMode == this.modes.Skull) {
-            const geometry = new THREE.SphereGeometry(1, 32, 16);
-            const material = new THREE.PointsMaterial({ size: 0.1, color: 'purple' });
-            const sphere = new THREE.Points(geometry, material);
-            sphere.position.set(0, 2, 0);
-            sphere.frustumCulled = false;
-            sphere.updateMatrixWorld();
-
-
-            let position = sphere.geometry.getAttribute('position')
-            //position.setY(100, position.getY(100) + 1);
-            //position.setY(110, position.getY(110) + 1);
-
-            let hairCards = [];
-
-            let numOfHairCards = 8;
-            for (let i = 0; i < numOfHairCards; i++) {
-                let plane = this.createHairCard();
-                let { system, initWPos } = this.loadParticleSystemFromCard(plane);
-
-                let vertex = new THREE.Vector3();
-
-                let index = 200 + i*10;
-                vertex.fromBufferAttribute(position, index);
-                let worldPos = sphere.localToWorld(vertex);
-
-                plane.position.set(worldPos.x, worldPos.y, worldPos.z);
-                plane.updateMatrixWorld();
-                system.setAnchor([worldPos.x, worldPos.y, worldPos.z]);
-
-                this.scene.add(sphere);
-                this.scene.add(plane);
-
-                hairCards.push({card: new entitySystem(plane, system, initWPos), index:index} );
-            }
-            this.skull = new skullSystem(sphere, hairCards);
+            this.initSkullSystem();
         }
 
         console.log(this.scene)
@@ -266,7 +232,10 @@ export class App {
             }
 
             else if (this.options.mode == this.modes.Skull) {
-                this.skull.moveSkull(2,2,0);
+                this.skull.moveSkull(0, 2, 0);
+                for (let i = 0; i < this.skull.hairCards.length; i++) {
+                    this.skull.hairCards[i].card.system.setParams(this.options);
+                }
 
             }
 
@@ -291,6 +260,9 @@ export class App {
 
             else if (this.options.mode == this.modes.MultiPlane) {
                 this.initMultiPlaneSytem();
+            }
+            else if (this.options.mode == this.modes.Skull) {
+                this.initSkullSystem();
             }
 
             this.currentMode = this.options.mode;
@@ -383,6 +355,44 @@ export class App {
             this.scene.add(cardMesh);
             this.hairCards.push(new entitySystem(cardMesh, system, initWPos));
         }
+    }
+
+    initSkullSystem() {
+        const geometry = new THREE.SphereGeometry(1, 32, 16);
+        const material = new THREE.PointsMaterial({ size: 0.1, color: 'purple' });
+        const sphere = new THREE.Points(geometry, material);
+        sphere.position.set(0, 2, 0);
+        sphere.frustumCulled = false;
+        sphere.updateMatrixWorld();
+
+
+        let position = sphere.geometry.getAttribute('position')
+        //position.setY(100, position.getY(100) + 1);
+        //position.setY(110, position.getY(110) + 1);
+
+        let hairCards = [];
+
+        let numOfHairCards = 8;
+        for (let i = 0; i < numOfHairCards; i++) {
+            let plane = this.createHairCard();
+            let { system, initWPos } = this.loadParticleSystemFromCard(plane);
+
+            let vertex = new THREE.Vector3();
+
+            let index = 200 + i * 10;
+            vertex.fromBufferAttribute(position, index);
+            let worldPos = sphere.localToWorld(vertex);
+
+            plane.position.set(worldPos.x, worldPos.y, worldPos.z);
+            plane.updateMatrixWorld();
+            system.setAnchor([worldPos.x, worldPos.y, worldPos.z]);
+
+            this.scene.add(sphere);
+            this.scene.add(plane);
+
+            hairCards.push({ card: new entitySystem(plane, system, initWPos), index: index });
+        }
+        this.skull = new skullSystem(sphere, hairCards);
     }
 
     onWindowResize() {
