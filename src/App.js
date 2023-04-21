@@ -5,11 +5,11 @@ import { GUI } from 'https://cdn.skypack.dev/lil-gui';
 
 import { SpringMassSystem1D, SpringMassSystem2D, MultipleSpringMassSystem, ParticleSystemFromCard } from './SpringMassSystem.js';
 
-function entitySystem(mesh, system, initWPos) {
+function entitySystem(mesh, system, initWPos, skullIndex = 0) {
     this.mesh = mesh;
     this.system = system;
     this.initWPos = initWPos;
-    this.skullIndex = null;
+    this.skullIndex = skullIndex;
 
     this.setPosition = (x, y, z) => {
         this.mesh.position.set(x, y, z);
@@ -27,11 +27,11 @@ function skullSystem(sphereMesh, hairCards) {
 
         for (let i = 0; i < this.hairCards.length; i++) {
             let vertex = new THREE.Vector3();
-            let index = this.hairCards[i].index;
+            let index = this.hairCards[i].skullIndex;
             vertex.fromBufferAttribute(position, index);
             let worldPos = this.skull.localToWorld(vertex);
 
-            this.hairCards[i].card.setPosition(worldPos.x, worldPos.y, worldPos.z);
+            this.hairCards[i].setPosition(worldPos.x, worldPos.y, worldPos.z);
         }
     };
 
@@ -250,7 +250,7 @@ export class App {
             else if (this.options.mode == this.modes.Skull) {
                 this.skull.moveSkull(0, 2, 0);
                 for (let i = 0; i < this.skull.hairCards.length; i++) {
-                    this.skull.hairCards[i].card.system.setParams(this.options);
+                    this.skull.hairCards[i].system.setParams(this.options);
                 }
 
             }
@@ -406,7 +406,7 @@ export class App {
             this.scene.add(sphere);
             this.scene.add(plane);
 
-            hairCards.push({ card: new entitySystem(plane, system, initWPos), index: index });
+            hairCards.push(new entitySystem(plane, system, initWPos, index) );
         }
         this.skull = new skullSystem(sphere, hairCards);
     }
@@ -457,7 +457,7 @@ export class App {
 
         else if (this.currentMode == this.modes.Skull) {
             for (let i = 0; i < this.skull.hairCards.length; i++) {
-                this.updateHairCard(delta, this.skull.hairCards[i].card);
+                this.updateHairCard(delta, this.skull.hairCards[i]);
             }
         }
 
