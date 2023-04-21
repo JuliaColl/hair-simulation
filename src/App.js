@@ -22,10 +22,7 @@ function skullSystem(sphereMesh, hairCards) {
     this.skull = sphereMesh;    //mesh
     this.hairCards = hairCards;  // hair card + index in the skull {card: entitySystem, index: int}
 
-    this.moveSkull = (x, y, z) => {
-        this.skull.position.set(x, y, z);
-        this.skull.updateMatrixWorld();
-
+    this.updateHairCards = () => {
         let position = this.skull.geometry.getAttribute('position');
 
         for (let i = 0; i < this.hairCards.length; i++) {
@@ -36,7 +33,24 @@ function skullSystem(sphereMesh, hairCards) {
 
             this.hairCards[i].card.setPosition(worldPos.x, worldPos.y, worldPos.z);
         }
+    };
+
+    this.moveSkull = (x, y, z) => {
+        this.skull.position.set(x, y, z);
+        this.skull.updateMatrixWorld();
+
+        this.updateHairCards();        
     }
+
+    this.rotateSkull = (rad) => {
+        this.skull.rotation.z += rad;
+        this.skull.rotation.x += rad;
+        this.skull.rotation.y += rad;
+        this.skull.updateMatrixWorld();
+
+        this.updateHairCards();  
+    }
+
 
 }
 
@@ -102,7 +116,6 @@ export class App {
         document.onkeydown = (e) => {
             if (this.currentMode == this.modes.Skull) {
 
-
                 let delta = 0.05;
                 if (e.code === 'ArrowUp') {
                     let position = this.skull.skull.position;
@@ -119,6 +132,9 @@ export class App {
                 else if (e.code === 'ArrowRight') {
                     let position = this.skull.skull.position;
                     this.skull.moveSkull(position.x + delta, position.y, position.z);
+                }
+                else if (e.code === 'Space') {
+                    this.skull.rotateSkull(0.1);
                 }
             }
         };
