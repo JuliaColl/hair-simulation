@@ -20,7 +20,7 @@ function entitySystem(mesh, system, initWPos, skullIndex = 0) {
 
 function skullSystem(sphereMesh, hairCards) {
     this.skull = sphereMesh;    //mesh
-    this.hairCards = hairCards;  // hair card + index in the skull {card: entitySystem, index: int}
+    this.hairCards = hairCards;  // array of entitySystems
 
     this.updateHairCards = () => {
         let position = this.skull.geometry.getAttribute('position');
@@ -147,7 +147,7 @@ export class App {
             Skull: 3
         }
 
-        this.currentMode = this.modes.Skull;
+        this.currentMode = this.modes.MassSpring;
 
         this.options = {
             damping: 100,
