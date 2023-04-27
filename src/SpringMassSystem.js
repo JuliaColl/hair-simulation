@@ -311,6 +311,7 @@ export class MultipleSpringMassSystem {
 
             // Update line           
             this.lines[j].geometry.setFromPoints([this.particles[j].position, endPos]);
+            let f = 0;
         }
     }
 }
