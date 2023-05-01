@@ -120,7 +120,7 @@ export class App {
         document.onkeydown = (e) => {
             if (this.currentMode == this.modes.Skull) {
 
-                let delta = 0.05;
+                let delta = 0.005;
                 if (e.code === 'ArrowUp') {
                     let position = this.skull.skull.position;
                     this.skull.moveSkull(position.x, position.y + delta, position.z); //TODO: add dt somewhere in the future if I want to keep it
@@ -199,6 +199,7 @@ export class App {
                 let model = glb.scene;
                 model.position.set(0, 0, 0);
 
+                console.log(model);
                 // hide hair
                 model.getObjectByName("Hair").visible = false;
 
@@ -287,18 +288,18 @@ export class App {
         let intersects = raycaster.intersectObject(this.skull.skull);
 
         if (intersects.length > 0) {
-            
+
             // get the face of the closest intersection
             let face = intersects[0].face;
-        
+
             console.log(face);
-            
+
             // get one vertex position indix of the face
             let v = new THREE.Vector3();
 
-            v.fromBufferAttribute( position, face.a );
+            v.fromBufferAttribute(position, face.a);
             console.log(v);
-            
+
 
             /*
             // get the face index of the closest intersection
@@ -390,8 +391,11 @@ export class App {
 
     createHairCard() {
         const cardGeometry = new THREE.PlaneGeometry(0.05, 0.1, 1, 4);
-        const cardMaterial = new THREE.MeshBasicMaterial({ color: 0xffff00, side: THREE.DoubleSide });
-
+        //const cardMaterial = new THREE.MeshBasicMaterial({ color: 0xffff00, side: THREE.DoubleSide });
+        
+        const textureLoader = new THREE.TextureLoader();
+        const texture = textureLoader.load( '/data/strand.png');
+        const cardMaterial = new THREE.MeshStandardMaterial({map: texture, side: THREE.DoubleSide });
         let cardMesh = new THREE.Mesh(cardGeometry, cardMaterial);
         cardMesh.frustumCulled = false;
 
@@ -476,10 +480,10 @@ export class App {
     }
 
     initSkullSystem() {
-        const geometry = new THREE.SphereGeometry(1, 32, 16);
-        const material = new THREE.PointsMaterial({ size: 0.1, color: 'purple' });
+        const geometry = new THREE.SphereGeometry(0.1, 32, 16);
+        const material = new THREE.PointsMaterial({ size: 0.01, color: 'purple' });
         const sphere = new THREE.Points(geometry, material);
-        sphere.position.set(0, 2, 0);
+        sphere.position.set(0, 1.3, 0);
         sphere.frustumCulled = false;
         sphere.updateMatrixWorld();
 
