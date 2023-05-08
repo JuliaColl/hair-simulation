@@ -15,7 +15,12 @@ function entitySystem(mesh, system, initWPos, skullIndex = 0) {
         this.mesh.position.set(x, y, z);
         this.mesh.updateMatrixWorld();
         this.system.setAnchor([x, y, z]);
+    };
+
+    this.setVisible = (bool) => {
+        this.mesh.visible = bool;
     }
+
 }
 
 function skullSystem(headMesh, hairCards) {
@@ -51,6 +56,13 @@ function skullSystem(headMesh, hairCards) {
         this.updateHairCards();
     }
 
+    this.setVisible = (bool) => {
+        this.skull.visible = bool;
+        for (let i = 0; i < this.hairCards.length; i++) {
+            this.hairCards[i].setVisible(bool);
+        }
+
+    }
 
 }
 
@@ -118,27 +130,33 @@ export class App {
         window.addEventListener('resize', this.onWindowResize.bind(this));
         window.addEventListener('click', this.onClick);
         document.onkeydown = (e) => {
-            if (this.currentMode == this.modes.Skull) {
-
+            if (this.currentMode == this.modes.Skull || this.currentMode == this.modes.Head) {
+                let model = this.currentMode == this.modes.Skull ? this.skull : this.head;
                 let delta = 0.005;
                 if (e.code === 'ArrowUp') {
-                    let position = this.skull.skull.position;
-                    this.skull.moveSkull(position.x, position.y + delta, position.z); //TODO: add dt somewhere in the future if I want to keep it
+                    let position = model.skull.position;
+                    model.moveSkull(position.x, position.y + delta, position.z); //TODO: add dt somewhere in the future if I want to keep it
                 }
                 else if (e.code === 'ArrowDown') {
-                    let position = this.skull.skull.position;
-                    this.skull.moveSkull(position.x, position.y - delta, position.z);
+                    let position = model.skull.position;
+                    model.moveSkull(position.x, position.y - delta, position.z);
                 }
                 else if (e.code === 'ArrowLeft') {
-                    let position = this.skull.skull.position;
-                    this.skull.moveSkull(position.x - delta, position.y, position.z);
+                    let position = model.skull.position;
+                    model.moveSkull(position.x - delta, position.y, position.z);
                 }
                 else if (e.code === 'ArrowRight') {
-                    let position = this.skull.skull.position;
-                    this.skull.moveSkull(position.x + delta, position.y, position.z);
+                    let position = model.skull.position;
+                    model.moveSkull(position.x + delta, position.y, position.z);
                 }
                 else if (e.code === 'Space') {
-                    this.skull.rotateSkull(0.1);
+                    model.rotateSkull(0.1);
+                }
+            }
+
+            if (this.currentMode == this.modes.MassSpring) {
+                if (e.code === 'Space') {
+                    // this.particleSystem.setVisible(false);
                 }
             }
 
@@ -161,7 +179,7 @@ export class App {
             k: 800,
             gravity: -9.98,
             mass: 1.5,
-            //set: () => { this.set() },
+            set: () => { this.set() },
             restart: () => { this.restart() },
             mode: this.currentMode
         };
@@ -174,87 +192,21 @@ export class App {
         gui.add(this.options, 'k', 0, 1000).name('K');
         gui.add(this.options, 'gravity', -100, 0).name('Gravity');
         gui.add(this.options, 'mass', 0, 100).name('Mass');
-        // gui.add(this.options, 'set').name('Set params');
+        gui.add(this.options, 'set').name('Set params');
         gui.add(this.options, 'restart').name('Restart demo');
 
 
+
         // init models
-        if (this.currentMode == this.modes.MassSpring) {
-            this.initOnlyMassSpringSystem();
-        }
+        this.initOnlyMassSpringSystem();
 
-        else if (this.currentMode == this.modes.Plane) {
-            this.initOnlyOnePlaneSytem();
-        }
+        this.initOnlyOnePlaneSytem();
 
-        else if (this.currentMode == this.modes.MultiPlane) {
-            this.initMultiPlaneSytem();
-        }
-        else if (this.currentMode == this.modes.Skull) {
-            this.initSkullSystem();
+        this.initMultiPlaneSytem();
 
-        } else if (this.currentMode == this.modes.Head) {
+        this.initSkullSystem();
 
-            this.loaderGLB.load('./data/head.glb', (glb) => {
-                let model = glb.scene;
-                model.position.set(0, 0, 0);
-
-                console.log(model);
-                // hide hair
-                model.getObjectByName("Hair").visible = false;
-
-                //get head
-                let head = model.getObjectByName("Body")
-                head.material.wireframe = true;
-                head.updateMatrixWorld(); // make sure the object's world matrix is up-to-date
-
-                this.scene.add(model);
-                let position = head.geometry.getAttribute('position')
-
-                let hairCards = [];
-                let indeces = [1500, 1510, 662, 1544, 631]
-                let numOfHairCards = indeces.length;
-                for (let i = 0; i < numOfHairCards; i++) {
-                    let plane = this.createHairCard();
-                    let { system, initWPos } = this.loadParticleSystemFromCard(plane);
-
-                    let vertex = new THREE.Vector3();
-
-                    let index = indeces[i];
-                    vertex.fromBufferAttribute(position, index);
-                    let worldPos = head.localToWorld(vertex);
-
-                    plane.position.set(worldPos.x, worldPos.y, worldPos.z);
-                    plane.updateMatrixWorld();
-                    system.setAnchor([worldPos.x, worldPos.y, worldPos.z]);
-
-                    this.scene.add(plane);
-
-                    hairCards.push(new entitySystem(plane, system, initWPos, index));
-                }
-                this.skull = new skullSystem(head, hairCards);
-
-                // position.setY(10, position.getY(10) + 1);
-                //position.setY(11, position.getY(11) + 1);
-
-                //position.setY(20, position.getY(20) + 1);
-                //position.setY(21, position.getY(21) + 1);
-
-                //position.setY(0, position.getY(0) + 1);
-
-                //position.setY(2, position.getY(2) + 1);
-                //position.setY(1, position.getY(1) + 1);
-
-                //position.setY(1, position.getY(1) + 1);
-                //position.setY(2, position.getY(2) + 1);
-                //position.setY(3, position.getY(3) + 1);
-
-
-                //.particleSystem = new ParticleSystemFromCard(position);
-                //console.log(this.particleSystem)
-            });
-
-        }
+        this.initHead();
 
         console.log(this.scene)
 
@@ -264,13 +216,6 @@ export class App {
         this.animate();
     };
 
-    /*
-    set() {
-        if (this.options.mode == this.modes.Plane) {
-            this.particleSystem.setParams(this.options)
-        }
-    };
-    */
 
     onClick = (event) => {
         // calculate normalized mouse coordinates (-1 to +1)
@@ -281,11 +226,11 @@ export class App {
 
         raycaster.setFromCamera(this.mousePos, this.camera);
 
-        this.skull.skull.updateMatrixWorld();
-        let position = this.skull.skull.geometry.attributes.position;
+        this.head.skull.updateMatrixWorld();
+        let position = this.head.skull.geometry.attributes.position;
 
         // get an array of intersections between the ray and the mesh
-        let intersects = raycaster.intersectObject(this.skull.skull);
+        let intersects = raycaster.intersectObject(this.head.skull);
 
         if (intersects.length > 0) {
 
@@ -304,16 +249,16 @@ export class App {
             /*
             // get the face index of the closest intersection
             const faceIndex = intersects[0].faceIndex;
-
+    
             // get the vertex indices of the face
-            const vertexIndices = this.skull.skull.geometry.index.array.slice(
+            const vertexIndices = this.head.skull.geometry.index.array.slice(
                 faceIndex * 3,
                 faceIndex * 3 + 3
             );
-
+    
             // create a new array to store the positions of the vertices of the face
             const facePositions = [];
-
+    
             // add the positions of the vertices to the array
             for (let i = 0; i < 3; i++) {
                 const index = vertexIndices[i];
@@ -330,72 +275,68 @@ export class App {
 
     }
 
-    restart() {
-        if (this.currentMode == this.options.mode) {  //same mode only upfate params of the scene
+
+    set() {
+        if (this.currentMode == this.options.mode) {  //same mode only update params of the scene
+            
             if (this.options.mode == this.modes.MassSpring) {
                 this.particleSystem.setParams(this.options);
                 this.particleSystem.restart();
 
             }
 
-            if (this.options.mode == this.modes.Plane) {
-                // CHECK: should I detete first the old particle system? 
-                this.hairCard.system = new ParticleSystemFromCard(this.initWPos, this.options);
+            else if (this.options.mode == this.modes.Plane) {
+                this.hairCard.system.setParams(this.options);
             }
 
             else if (this.options.mode == this.modes.MultiPlane) {
                 for (let i = 0; i < this.hairCards.length; i++) {
-                    this.hairCards[i].system = new ParticleSystemFromCard(this.hairCards[i].initWPos, this.options);
+                    this.hairCards[i].system.setParams(this.options);
+
                 }
             }
 
-            else if (this.options.mode == this.modes.Skull) {
-                this.skull.moveSkull(0, 2, 0);
+            else if (this.options.mode == this.modes.Skull || this.options.mode == this.modes.Head) {
+                //this.skull.moveSkull(0, 2, 0);
+                let model = this.options.mode == this.modes.Skull ? this.skull : this.head;
                 for (let i = 0; i < this.skull.hairCards.length; i++) {
-                    this.skull.hairCards[i].system.setParams(this.options);
+                    model.hairCards[i].system.setParams(this.options);
                 }
 
             }
 
         }
+    };
 
-        else {
-            // clear scene
-            for (let i = this.scene.children.length - 1; i >= 0; i--) {
-                let child = this.scene.children[i]
-
-                if (child.type === 'Mesh' || child.type === 'Line' || child.type === 'Points' || child.type === 'Group')  // check if the child is a mesh
-                    this.scene.remove(child)
-
-            }
-
-            if (this.options.mode == this.modes.MassSpring) {
-                this.initOnlyMassSpringSystem();
-            }
-
-            else if (this.options.mode == this.modes.Plane) {
-                this.initOnlyOnePlaneSytem();
-            }
-
-            else if (this.options.mode == this.modes.MultiPlane) {
-                this.initMultiPlaneSytem();
-            }
-            else if (this.options.mode == this.modes.Skull) {
-                this.initSkullSystem();
-            }
-
-            this.currentMode = this.options.mode;
+    restart() {
+        if (this.options.mode == this.modes.Plane) {
+            this.hairCard.system = new ParticleSystemFromCard(this.hairCard.initWPos, this.options);
         }
+
+        else if (this.options.mode == this.modes.MultiPlane) {
+            for (let i = 0; i < this.hairCards.length; i++) {
+                this.hairCards[i].system = new ParticleSystemFromCard(this.hairCards[i].initWPos, this.options);
+            }
+        }
+
+        else if (this.options.mode == this.modes.Skull) {
+            this.skull.moveSkull(0, 1.5, 0);
+
+            for (let i = 0; i < this.hairCards.length; i++) {
+                //this.skull.hairCards[i].system = new ParticleSystemFromCard(this.skull.hairCards[i].initWPos, this.options);
+            }
+        }
+
 
     };
 
     createHairCard() {
         const cardGeometry = new THREE.PlaneGeometry(0.05, 0.1, 1, 4);
         //const cardMaterial = new THREE.MeshBasicMaterial({ color: 0xffff00, side: THREE.DoubleSide });
-        
+
         const textureLoader = new THREE.TextureLoader();
-        const texture = textureLoader.load( '/data/strand.png');
-        const cardMaterial = new THREE.MeshStandardMaterial({map: texture, side: THREE.DoubleSide });
+        const texture = textureLoader.load('/data/strand.png');
+        const cardMaterial = new THREE.MeshStandardMaterial({ map: texture, side: THREE.DoubleSide });
         let cardMesh = new THREE.Mesh(cardGeometry, cardMaterial);
         cardMesh.frustumCulled = false;
 
@@ -429,6 +370,9 @@ export class App {
             }
         }
 
+        this.particleSystem.setVisible(false);
+
+
     };
 
     loadParticleSystemFromCard(mesh) {
@@ -447,7 +391,7 @@ export class App {
     initOnlyOnePlaneSytem() {
         let cardMesh = this.createHairCard();
 
-        cardMesh.position.set(0, 2, 0);
+        cardMesh.position.set(0, 1.5, 0);
         //cardMesh.rotateY(0.75);
         cardMesh.rotateX(-1);
         //cardMesh.rotateZ(0);
@@ -459,6 +403,7 @@ export class App {
         let { system, initWPos } = this.loadParticleSystemFromCard(cardMesh);
 
         this.hairCard = new entitySystem(cardMesh, system, initWPos);
+        this.hairCard.setVisible(false);
     };
 
     initMultiPlaneSytem() {
@@ -468,14 +413,17 @@ export class App {
             let cardMesh = this.createHairCard();
 
             // Set the position of the mesh to be at the origin
-            cardMesh.position.set(-numOfHairCards / 2 + i, 2, 0);
+            cardMesh.position.set(-numOfHairCards / 4 + i / 2, 1.5, 0);
             cardMesh.rotateX(-1);
             cardMesh.updateMatrixWorld();
 
             let { system, initWPos } = this.loadParticleSystemFromCard(cardMesh);
             // Add the mesh to the scene
             this.scene.add(cardMesh);
-            this.hairCards.push(new entitySystem(cardMesh, system, initWPos));
+
+            let card = new entitySystem(cardMesh, system, initWPos);
+            card.setVisible(false);
+            this.hairCards.push(card);
         }
     }
 
@@ -515,6 +463,57 @@ export class App {
             hairCards.push(new entitySystem(plane, system, initWPos, index));
         }
         this.skull = new skullSystem(sphere, hairCards);
+        this.skull.setVisible(false);
+
+    }
+
+    initHead() {
+
+        this.loaderGLB.load('./data/head.glb', (glb) => {
+            let model = glb.scene;
+            model.position.set(0, 0, 0);
+
+            console.log(model);
+            // hide hair
+            model.getObjectByName("Hair").visible = false;
+
+            //get head
+            let head = model.getObjectByName("Body");
+
+            if (this.currentMode != this.modes.Head)
+                head.visible = false;
+
+            head.material.wireframe = true;
+            head.updateMatrixWorld(); // make sure the object's world matrix is up-to-date
+
+            this.scene.add(model);
+            let position = head.geometry.getAttribute('position')
+
+            let hairCards = [];
+            let indeces = [1500, 1510, 662, 1544, 631]
+            let numOfHairCards = indeces.length;
+            for (let i = 0; i < numOfHairCards; i++) {
+                let plane = this.createHairCard();
+                let { system, initWPos } = this.loadParticleSystemFromCard(plane);
+
+                let vertex = new THREE.Vector3();
+
+                let index = indeces[i];
+                vertex.fromBufferAttribute(position, index);
+                let worldPos = head.localToWorld(vertex);
+
+                plane.position.set(worldPos.x, worldPos.y, worldPos.z);
+                plane.updateMatrixWorld();
+                system.setAnchor([worldPos.x, worldPos.y, worldPos.z]);
+
+                this.scene.add(plane);
+
+                hairCards.push(new entitySystem(plane, system, initWPos, index));
+            }
+            this.head = new skullSystem(head, hairCards);
+
+
+        });
     }
 
     onWindowResize() {
@@ -546,6 +545,11 @@ export class App {
     }
 
     update(delta) {
+
+        if (this.currentMode != this.options.mode)
+            this.updateMode();
+
+
         if (this.currentMode == this.modes.MassSpring && this.particleSystem) {
             this.particleSystem.update(delta);
         }
@@ -562,8 +566,11 @@ export class App {
         }
 
         else if (this.currentMode == this.modes.Skull || this.currentMode == this.modes.Head) {
-            for (let i = 0; i < this.skull.hairCards.length; i++) {
-                this.updateHairCard(delta, this.skull.hairCards[i]);
+            let model = this.currentMode == this.modes.Skull ? this.skull : this.head;
+            if (!model)
+                return;
+            for (let i = 0; i < model.hairCards.length; i++) {
+                this.updateHairCard(delta, model.hairCards[i]);
             }
         }
 
@@ -614,6 +621,51 @@ export class App {
             position.needsUpdate = true;
 
         }
+    }
+
+    updateMode() {
+        if (this.currentMode == this.modes.MassSpring)
+            this.particleSystem.setVisible(false);
+
+        else if (this.currentMode == this.modes.Plane)
+            this.hairCard.setVisible(false);
+
+        else if (this.currentMode == this.modes.MultiPlane) {
+            for (let i = 0; i < this.hairCards.length; i++)
+            {
+                this.hairCards[i].setVisible(false);
+            }
+        }
+
+        else if (this.currentMode == this.modes.Skull)
+            this.skull.setVisible(false);
+
+        else if (this.currentMode == this.modes.Head)
+            this.head.setVisible(false);
+
+
+
+        if (this.options.mode == this.modes.MassSpring)
+            this.particleSystem.setVisible(true);
+
+        else if (this.options.mode == this.modes.Plane)
+            this.hairCard.setVisible(true);
+
+
+        else if (this.options.mode == this.modes.MultiPlane) {
+            for (let i = 0; i < this.hairCards.length; i++)
+                {
+                    this.hairCards[i].setVisible(true);
+                }
+        }
+
+        else if (this.options.mode == this.modes.Skull)
+            this.skull.setVisible(true);
+
+        else if (this.options.mode == this.modes.Head)
+            this.head.setVisible(true);
+
+        this.currentMode = this.options.mode;
     }
 
 }

@@ -6,7 +6,7 @@ var k = 800;
 var damping = 100;
 
 function createParticle(color = 'purple') {
-    const radius = 0.1;
+    const radius = 0.03;
     const widthSegments = 16;
     const heightSegments = 16;
 
@@ -157,7 +157,7 @@ export class MultipleSpringMassSystem {
     k = 800;
     gravity = -9.98;
 
-    mode = modes.inextensible;
+    mode = modes.massSpring;
 
     restDistance = 0.5;
 
@@ -179,7 +179,7 @@ export class MultipleSpringMassSystem {
             // init particles
             if (j == 0){
                 var p = createParticle('green');
-                p.position.set(0,2,0)
+                p.position.set(0,1.5,0)
             }else{
                 var p = createParticle();
                 p.position.set(-j, j, j);
@@ -207,6 +207,13 @@ export class MultipleSpringMassSystem {
         this.k = k;
         this.gravity = gravity;
     };
+
+    setVisible( bool ){
+        for (let i = 0; i < this.particles.length; i++ ){
+            this.particles[i].visible = bool; 
+            this.lines[i].visible = bool;
+        }
+    }
 
     update(delta) {
         //
