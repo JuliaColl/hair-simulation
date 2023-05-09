@@ -536,7 +536,10 @@ export class App {
     }
 
     updatePosition(delta) {
-        let model = this.currentMode == this.modes.Skull ? this.skull : this.head;
+        let model = this.currentMode == this.modes.Skull ? this.skull : (this.currentMode == this.modes.Head ? this.head : null) ;
+        if(model == null)
+            return;
+            
         let tt = delta * 0.2;
         if (this.isArrowUp) {
             let position = model.skull.position;
