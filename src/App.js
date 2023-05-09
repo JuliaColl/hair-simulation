@@ -23,9 +23,75 @@ function entitySystem(mesh, system, initWPos, skullIndex = 0) {
 
 }
 
-function skullSystem(headMesh, hairCards) {
-    this.skull = headMesh;    //mesh
-    this.hairCards = hairCards;  // array of entitySystems
+function skullSystem(headMesh, indeces, options, initWPos = [0,0,0]) {
+    this.skull = headMesh;    //mesh of the head
+    //this.hairCards = hairCards;  // array of entitySystems
+    this.hairCards = [];
+    this.initWpos = [...initWPos];
+
+    this.skull.position.set(initWPos[0], initWPos[1], initWPos[2]);
+    this.skull.frustumCulled = false;
+    this.skull.updateMatrixWorld();
+
+    //this.scene.add(sphere);
+
+    let position = this.skull.geometry.getAttribute('position')
+    
+    this.createHairCard = () => {   //TODO put it somewhere else
+        const cardGeometry = new THREE.PlaneGeometry(0.05, 0.1, 1, 4);
+        //const cardMaterial = new THREE.MeshBasicMaterial({ color: 0xffff00, side: THREE.DoubleSide });
+
+        const textureLoader = new THREE.TextureLoader();
+        const texture = textureLoader.load('/data/strand.png');
+        const cardMaterial = new THREE.MeshStandardMaterial({ map: texture, side: THREE.DoubleSide });
+        let cardMesh = new THREE.Mesh(cardGeometry, cardMaterial);
+        cardMesh.frustumCulled = false;
+
+        return cardMesh;
+    }
+
+    this.loadParticleSystemFromCard = (mesh, options) => { //TODO put it somewhere else
+        let position = mesh.geometry.getAttribute('position')
+        let initWPos = [];
+        // change to world position
+        for (let i = 0; i < position.count; i++) {
+            let vertex = new THREE.Vector3();
+            vertex.fromBufferAttribute(position, i);
+            initWPos.push(mesh.localToWorld(vertex));
+        }
+
+        return { system: new ParticleSystemFromCard(initWPos, options), initWPos: initWPos };
+    }
+
+    let numOfHairCards = indeces.length;
+    for (let i = 0; i < numOfHairCards; i++) {
+        let plane = this.createHairCard();
+
+        let vertex = new THREE.Vector3();
+
+        //let index = 200 + i * 10;
+        let index = indeces[i];
+
+        vertex.fromBufferAttribute(position, index);
+        let worldPos = this.skull.localToWorld(vertex);
+
+        plane.position.set(worldPos.x, worldPos.y, worldPos.z);
+        plane.updateMatrixWorld();
+
+        let { system, initWPos } = this.loadParticleSystemFromCard(plane, options);
+        system.setAnchor([worldPos.x, worldPos.y, worldPos.z]);
+
+        //this.scene.add(plane);
+
+        this.hairCards.push(new entitySystem(plane, system, initWPos, index));
+    }    
+
+    this.addToScene = (scene) => {
+        scene.add(this.skull);
+        for (let i = 0; i < this.hairCards.length; i++) {
+            scene.add(this.hairCards[i].mesh);
+        }
+    }
 
     this.updateHairCards = () => {
         let position = this.skull.geometry.getAttribute('position');
@@ -37,6 +103,14 @@ function skullSystem(headMesh, hairCards) {
             let worldPos = this.skull.localToWorld(vertex);
 
             this.hairCards[i].setPosition(worldPos.x, worldPos.y, worldPos.z);
+        }
+    };
+
+    this.restart = (options) => {
+        this.moveSkull(this.initWpos[0], this.initWpos[1], this.initWpos[2]);
+
+        for (let i = 0; i < this.hairCards.length; i++) {
+            this.hairCards[i].system = new ParticleSystemFromCard(this.hairCards[i].initWPos, options);
         }
     };
 
@@ -277,12 +351,10 @@ export class App {
 
 
     set() {
-        if (this.currentMode == this.options.mode) {  //same mode only update params of the scene
+        if (this.currentMode == this.options.mode) {  
             
             if (this.options.mode == this.modes.MassSpring) {
                 this.particleSystem.setParams(this.options);
-                this.particleSystem.restart();
-
             }
 
             else if (this.options.mode == this.modes.Plane) {
@@ -299,7 +371,7 @@ export class App {
             else if (this.options.mode == this.modes.Skull || this.options.mode == this.modes.Head) {
                 //this.skull.moveSkull(0, 2, 0);
                 let model = this.options.mode == this.modes.Skull ? this.skull : this.head;
-                for (let i = 0; i < this.skull.hairCards.length; i++) {
+                for (let i = 0; i < model.hairCards.length; i++) {
                     model.hairCards[i].system.setParams(this.options);
                 }
 
@@ -309,7 +381,12 @@ export class App {
     };
 
     restart() {
-        if (this.options.mode == this.modes.Plane) {
+        if (this.options.mode == this.modes.MassSpring) {
+            this.particleSystem.setParams(this.options);
+            this.particleSystem.restart();
+        }
+
+        else if (this.options.mode == this.modes.Plane) {
             this.hairCard.system = new ParticleSystemFromCard(this.hairCard.initWPos, this.options);
         }
 
@@ -319,12 +396,9 @@ export class App {
             }
         }
 
-        else if (this.options.mode == this.modes.Skull) {
-            this.skull.moveSkull(0, 1.5, 0);
-
-            for (let i = 0; i < this.hairCards.length; i++) {
-                //this.skull.hairCards[i].system = new ParticleSystemFromCard(this.skull.hairCards[i].initWPos, this.options);
-            }
+        else if (this.options.mode == this.modes.Skull || this.options.mode == this.modes.Head) {
+            let model = this.options.mode == this.modes.Skull ? this.skull : this.head;
+            model.restart(this.options);
         }
 
 
@@ -431,38 +505,11 @@ export class App {
         const geometry = new THREE.SphereGeometry(0.1, 32, 16);
         const material = new THREE.PointsMaterial({ size: 0.01, color: 'purple' });
         const sphere = new THREE.Points(geometry, material);
-        sphere.position.set(0, 1.3, 0);
-        sphere.frustumCulled = false;
-        sphere.updateMatrixWorld();
+        
+        let indeces = [200, 210, 220, 230, 240, 250, 260, 270, 280];
+        this.skull = new skullSystem(sphere, indeces, this.options, [0, 1.3, 0]);
 
-        this.scene.add(sphere);
-
-        let position = sphere.geometry.getAttribute('position')
-        //position.setY(100, position.getY(100) + 1);
-        //position.setY(110, position.getY(110) + 1);
-
-        let hairCards = [];
-
-        let numOfHairCards = 8;
-        for (let i = 0; i < numOfHairCards; i++) {
-            let plane = this.createHairCard();
-            let { system, initWPos } = this.loadParticleSystemFromCard(plane);
-
-            let vertex = new THREE.Vector3();
-
-            let index = 200 + i * 10;
-            vertex.fromBufferAttribute(position, index);
-            let worldPos = sphere.localToWorld(vertex);
-
-            plane.position.set(worldPos.x, worldPos.y, worldPos.z);
-            plane.updateMatrixWorld();
-            system.setAnchor([worldPos.x, worldPos.y, worldPos.z]);
-
-            this.scene.add(plane);
-
-            hairCards.push(new entitySystem(plane, system, initWPos, index));
-        }
-        this.skull = new skullSystem(sphere, hairCards);
+        this.skull.addToScene(this.scene);
         this.skull.setVisible(false);
 
     }
@@ -486,33 +533,9 @@ export class App {
             head.material.wireframe = true;
             head.updateMatrixWorld(); // make sure the object's world matrix is up-to-date
 
-            this.scene.add(model);
-            let position = head.geometry.getAttribute('position')
-
-            let hairCards = [];
-            let indeces = [1500, 1510, 662, 1544, 631]
-            let numOfHairCards = indeces.length;
-            for (let i = 0; i < numOfHairCards; i++) {
-                let plane = this.createHairCard();
-                let { system, initWPos } = this.loadParticleSystemFromCard(plane);
-
-                let vertex = new THREE.Vector3();
-
-                let index = indeces[i];
-                vertex.fromBufferAttribute(position, index);
-                let worldPos = head.localToWorld(vertex);
-
-                plane.position.set(worldPos.x, worldPos.y, worldPos.z);
-                plane.updateMatrixWorld();
-                system.setAnchor([worldPos.x, worldPos.y, worldPos.z]);
-
-                this.scene.add(plane);
-
-                hairCards.push(new entitySystem(plane, system, initWPos, index));
-            }
-            this.head = new skullSystem(head, hairCards);
-
-
+            let indeces = [1500, 1510, 662, 1544, 631];
+            this.head = new skullSystem(head, indeces, this.options, [0, 0, 0]);
+            this.head.addToScene(this.scene);
         });
     }
 
