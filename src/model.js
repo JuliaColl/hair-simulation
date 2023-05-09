@@ -126,8 +126,8 @@ export class skullSystem {
     }
 
     rotateSkull = (rad) => {
-        this.skull.rotation.z += rad;
-        this.skull.rotation.x += rad;
+        //this.skull.rotation.z += rad;
+        //this.skull.rotation.x += rad;
         this.skull.rotation.y += rad;
         this.skull.updateMatrixWorld();
 

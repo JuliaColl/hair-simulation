@@ -4,7 +4,7 @@ import { GLTFLoader } from 'https://cdn.skypack.dev/three@0.136/examples/jsm/loa
 import { GUI } from 'https://cdn.skypack.dev/lil-gui';
 
 import { SpringMassSystem1D, SpringMassSystem2D, MultipleSpringMassSystem, ParticleSystemFromCard } from './SpringMassSystem.js';
-import {skullSystem, entitySystem} from './model.js'
+import { skullSystem, entitySystem } from './model.js'
 
 export class App {
 
@@ -70,30 +70,41 @@ export class App {
         window.addEventListener('resize', this.onWindowResize.bind(this));
         window.addEventListener('click', this.onClick);
         document.onkeydown = (e) => {
-            if (this.currentMode == this.modes.Skull || this.currentMode == this.modes.Head) {
-                let model = this.currentMode == this.modes.Skull ? this.skull : this.head;
-                let delta = 0.005;
-                if (e.code === 'ArrowUp') {
-                    let position = model.skull.position;
-                    model.moveSkull(position.x, position.y + delta, position.z); //TODO: add dt somewhere in the future if I want to keep it
-                }
-                else if (e.code === 'ArrowDown') {
-                    let position = model.skull.position;
-                    model.moveSkull(position.x, position.y - delta, position.z);
-                }
-                else if (e.code === 'ArrowLeft') {
-                    let position = model.skull.position;
-                    model.moveSkull(position.x - delta, position.y, position.z);
-                }
-                else if (e.code === 'ArrowRight') {
-                    let position = model.skull.position;
-                    model.moveSkull(position.x + delta, position.y, position.z);
-                }
-                else if (e.code === 'Space') {
-                    model.rotateSkull(0.1);
-                }
-            }
+
+            if (e.code === 'ArrowUp')
+                this.isArrowUp = true;
+
+            else if (e.code === 'ArrowDown')
+                this.isArrowDown = true;
+
+            else if (e.code === 'ArrowLeft')
+                this.isArrowLeft = true;
+
+            else if (e.code === 'ArrowRight')
+                this.isArrowRight = true;
+
+            else if (e.code === 'Space') 
+                this.isSpace = true;
         };
+
+        document.onkeyup = (e) => {
+
+            if (e.code === 'ArrowUp')
+                this.isArrowUp = false;
+
+            else if (e.code === 'ArrowDown')
+                this.isArrowDown = false;
+
+            else if (e.code === 'ArrowLeft')
+                this.isArrowLeft = false;
+
+            else if (e.code === 'ArrowRight')
+                this.isArrowRight = false;
+
+            else if (e.code === 'Space') 
+                this.isSpace = false;
+
+        }
 
         // init gui
         this.modes = {
@@ -209,8 +220,8 @@ export class App {
 
 
     set() {
-        if (this.currentMode == this.options.mode) {  
-            
+        if (this.currentMode == this.options.mode) {
+
             if (this.options.mode == this.modes.MassSpring) {
                 this.particleSystem.setParams(this.options);
             }
@@ -363,7 +374,7 @@ export class App {
         const geometry = new THREE.SphereGeometry(0.1, 32, 16);
         const material = new THREE.PointsMaterial({ size: 0.01, color: 'purple' });
         const sphere = new THREE.Points(geometry, material);
-        
+
         let indeces = [200, 210, 220, 230, 240, 250, 260, 270, 280];
         this.skull = new skullSystem(sphere, indeces, this.options, [0, 1.3, 0]);
 
@@ -450,36 +461,12 @@ export class App {
             let model = this.currentMode == this.modes.Skull ? this.skull : this.head;
             if (!model)
                 return;
+
             for (let i = 0; i < model.hairCards.length; i++) {
                 this.updateHairCard(delta, model.hairCards[i]);
             }
-        }
 
-        if (false) {
-
-            //if (this.particleSystem && this.model) {
-            const position = this.model.children[0].geometry.getAttribute('position');
-            //position.setY(0, position.getY(0) + 0.1);
-            this.particleSystem.update(delta);
-
-            for (var i = 0; i < this.particleSystem.particles.length; i++) {
-                // Access the geometry data of the model
-                //const position = this.cardMesh.geometry.getAttribute('position');
-                const position = this.model.children[0].geometry.getAttribute('position');
-
-                const particle = this.particleSystem.particles[i];
-
-                const vertexIndex = particle.index;
-                const newX = particle.position[0];
-                const newY = particle.position[1];
-                const newZ = particle.position[2];
-
-                position.setXYZ(vertexIndex, newX, newY, newZ);
-                position.setXYZ(vertexIndex + 1, newX + particle.offset[0], newY + particle.offset[1], newZ + particle.offset[2]);
-
-            }
-            position.needsUpdate = true;
-
+            this.updatePosition(delta);
 
         }
 
@@ -505,6 +492,8 @@ export class App {
     }
 
     updateMode() {
+
+        // hide previous mode 
         if (this.currentMode == this.modes.MassSpring)
             this.particleSystem.setVisible(false);
 
@@ -512,12 +501,10 @@ export class App {
             this.hairCard.setVisible(false);
 
         else if (this.currentMode == this.modes.MultiPlane) {
-            for (let i = 0; i < this.hairCards.length; i++)
-            {
+            for (let i = 0; i < this.hairCards.length; i++) {
                 this.hairCards[i].setVisible(false);
             }
         }
-
         else if (this.currentMode == this.modes.Skull)
             this.skull.setVisible(false);
 
@@ -525,7 +512,7 @@ export class App {
             this.head.setVisible(false);
 
 
-
+        // show new mode 
         if (this.options.mode == this.modes.MassSpring)
             this.particleSystem.setVisible(true);
 
@@ -534,10 +521,9 @@ export class App {
 
 
         else if (this.options.mode == this.modes.MultiPlane) {
-            for (let i = 0; i < this.hairCards.length; i++)
-                {
-                    this.hairCards[i].setVisible(true);
-                }
+            for (let i = 0; i < this.hairCards.length; i++) {
+                this.hairCards[i].setVisible(true);
+            }
         }
 
         else if (this.options.mode == this.modes.Skull)
@@ -547,6 +533,32 @@ export class App {
             this.head.setVisible(true);
 
         this.currentMode = this.options.mode;
+    }
+
+    updatePosition(delta) {
+        let model = this.currentMode == this.modes.Skull ? this.skull : this.head;
+        let tt = delta * 0.2;
+        if (this.isArrowUp) {
+            let position = model.skull.position;
+            model.moveSkull(position.x, position.y + tt, position.z); //TODO: add dt somewhere in the future if I want to keep it
+        }
+        if (this.isArrowDown) {
+            let position = model.skull.position;
+            model.moveSkull(position.x, position.y - tt, position.z);
+        }
+        if (this.isArrowLeft) {
+            let position = model.skull.position;
+            model.moveSkull(position.x - tt, position.y, position.z);
+        }
+        if (this.isArrowRight) {
+            let position = model.skull.position;
+            model.moveSkull(position.x + tt, position.y, position.z);
+        }
+        
+        if (this.isSpace) {
+            model.rotateSkull(delta);
+        }
+        
     }
 
 }
