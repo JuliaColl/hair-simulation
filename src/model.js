@@ -69,12 +69,12 @@ export class skullSystem {
         //const cardMaterial = new THREE.MeshBasicMaterial({ color: 0xffff00, side: THREE.DoubleSide });
 
         const textureLoader = new THREE.TextureLoader();
-        const texture = textureLoader.load('./data/strand 4 RGB.png');
-        const aTexture = textureLoader.load('./data/strand 4 A.png');
+        const texture = textureLoader.load('./data/strand4RGB.png');
+        const aTexture = textureLoader.load('./data/strand4A.png');
         let cardMaterial = new THREE.MeshStandardMaterial({ map: texture, side: THREE.DoubleSide, alphaMap: aTexture });
         let cardMesh = new THREE.Mesh(cardGeometry, cardMaterial);
         cardMesh.frustumCulled = false;
-        cardMesh.transparent = true;
+        cardMaterial.transparent = true;
         
         return cardMesh;
     }
