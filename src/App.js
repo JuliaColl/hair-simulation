@@ -110,7 +110,7 @@ export class App {
         this.modes = {
             MassSpring: 0,
             Plane: 1,
-            MultiPlane: 2,
+            //MultiPlane: 2,
             Skull: 3,
             Head: 4
         }
@@ -145,7 +145,7 @@ export class App {
 
         this.initOnlyOnePlaneSytem();
 
-        this.initMultiPlaneSytem();
+        //this.initMultiPlaneSytem();
 
         this.initSkullSystem();
 
@@ -230,12 +230,14 @@ export class App {
                 this.hairCard.system.setParams(this.options);
             }
 
+            /*
             else if (this.options.mode == this.modes.MultiPlane) {
                 for (let i = 0; i < this.hairCards.length; i++) {
                     this.hairCards[i].system.setParams(this.options);
 
                 }
             }
+            */
 
             else if (this.options.mode == this.modes.Skull || this.options.mode == this.modes.Head) {
                 //this.skull.moveSkull(0, 2, 0);
@@ -259,11 +261,13 @@ export class App {
             this.hairCard.system = new ParticleSystemFromCard(this.hairCard.initWPos, this.options);
         }
 
+        /*
         else if (this.options.mode == this.modes.MultiPlane) {
             for (let i = 0; i < this.hairCards.length; i++) {
                 this.hairCards[i].system = new ParticleSystemFromCard(this.hairCards[i].initWPos, this.options);
             }
         }
+        */
 
         else if (this.options.mode == this.modes.Skull || this.options.mode == this.modes.Head) {
             let model = this.options.mode == this.modes.Skull ? this.skull : this.head;
@@ -278,11 +282,13 @@ export class App {
         //const cardMaterial = new THREE.MeshBasicMaterial({ color: 0xffff00, side: THREE.DoubleSide });
 
         const textureLoader = new THREE.TextureLoader();
-        const texture = textureLoader.load('/data/strand.png');
-        const cardMaterial = new THREE.MeshStandardMaterial({ map: texture, side: THREE.DoubleSide });
+        const texture = textureLoader.load('/data/strand 4 RGB.png');
+        const aTexture = textureLoader.load('/data/strand 4 A.png');
+        let cardMaterial = new THREE.MeshStandardMaterial({ map: texture, side: THREE.DoubleSide, alphaMap: aTexture });
         let cardMesh = new THREE.Mesh(cardGeometry, cardMaterial);
         cardMesh.frustumCulled = false;
-
+        cardMesh.transparent = true;
+        
         return cardMesh;
     }
 
@@ -349,6 +355,7 @@ export class App {
         this.hairCard.setVisible(false);
     };
 
+    /*
     initMultiPlaneSytem() {
         let numOfHairCards = 7;
         for (let i = 0; i < numOfHairCards; i++) {
@@ -369,6 +376,7 @@ export class App {
             this.hairCards.push(card);
         }
     }
+    */
 
     initSkullSystem() {
         const geometry = new THREE.SphereGeometry(0.1, 32, 16);
@@ -451,11 +459,13 @@ export class App {
             this.updateHairCard(delta, this.hairCard);
         }
 
+        /*
         else if (this.currentMode == this.modes.MultiPlane) {
             for (let i = 0; i < this.hairCards.length; i++) {
                 this.updateHairCard(delta, this.hairCards[i]);
             }
         }
+        */
 
         else if (this.currentMode == this.modes.Skull || this.currentMode == this.modes.Head) {
             let model = this.currentMode == this.modes.Skull ? this.skull : this.head;
@@ -500,11 +510,13 @@ export class App {
         else if (this.currentMode == this.modes.Plane)
             this.hairCard.setVisible(false);
 
+        /*
         else if (this.currentMode == this.modes.MultiPlane) {
             for (let i = 0; i < this.hairCards.length; i++) {
                 this.hairCards[i].setVisible(false);
             }
         }
+        */
         else if (this.currentMode == this.modes.Skull)
             this.skull.setVisible(false);
 
@@ -519,12 +531,13 @@ export class App {
         else if (this.options.mode == this.modes.Plane)
             this.hairCard.setVisible(true);
 
-
+        /*
         else if (this.options.mode == this.modes.MultiPlane) {
             for (let i = 0; i < this.hairCards.length; i++) {
                 this.hairCards[i].setVisible(true);
             }
         }
+        */
 
         else if (this.options.mode == this.modes.Skull)
             this.skull.setVisible(true);

@@ -6,7 +6,7 @@ export class entitySystem {
     system = null;
     initWPos = [];
     skullIndex = null;
-
+    
 
     constructor(mesh, system, initWPos, skullIndex = 0) {
         this.mesh = mesh;
@@ -30,16 +30,16 @@ export class entitySystem {
 export class skullSystem {
     skull = null;
     hairCards = [];
-    initWpos = [];
+    initPosition = [];
 
-    constructor(headMesh, indeces, options, initWPos = [0, 0, 0]) {
+    constructor(headMesh, indeces, options, wPos = [0, 0, 0]) {
         this.skull = headMesh;    //mesh of the head
 
-        this.skull.position.set(initWPos[0], initWPos[1], initWPos[2]);
+        this.skull.position.set(wPos[0], wPos[1], wPos[2]);
         this.skull.frustumCulled = false;
         this.skull.updateMatrixWorld();
 
-        this.initWpos = [...initWPos];
+        this.initPosition = [...wPos];
 
         let position = this.skull.geometry.getAttribute('position');
 
@@ -69,11 +69,13 @@ export class skullSystem {
         //const cardMaterial = new THREE.MeshBasicMaterial({ color: 0xffff00, side: THREE.DoubleSide });
 
         const textureLoader = new THREE.TextureLoader();
-        const texture = textureLoader.load('/data/strand.png');
-        const cardMaterial = new THREE.MeshStandardMaterial({ map: texture, side: THREE.DoubleSide });
+        const texture = textureLoader.load('/data/strand 4 RGB.png');
+        const aTexture = textureLoader.load('/data/strand 4 A.png');
+        let cardMaterial = new THREE.MeshStandardMaterial({ map: texture, side: THREE.DoubleSide, alphaMap: aTexture });
         let cardMesh = new THREE.Mesh(cardGeometry, cardMaterial);
         cardMesh.frustumCulled = false;
-
+        cardMesh.transparent = true;
+        
         return cardMesh;
     }
 
@@ -111,10 +113,19 @@ export class skullSystem {
     };
 
     restart = (options) => {
-        this.moveSkull(this.initWpos[0], this.initWpos[1], this.initWpos[2]);
+        this.moveSkull(this.initPosition[0], this.initPosition[1], this.initPosition[2]);
 
         for (let i = 0; i < this.hairCards.length; i++) {
             this.hairCards[i].system = new ParticleSystemFromCard(this.hairCards[i].initWPos, options);
+
+            let position = this.skull.geometry.getAttribute('position');
+
+            let vertex = new THREE.Vector3();
+            let index =  this.hairCards[i].skullIndex;
+            vertex.fromBufferAttribute(position, index);
+            let worldPos = this.skull.localToWorld(vertex);
+            this.hairCards[i].system.setAnchor([worldPos.x, worldPos.y, worldPos.z]);
+
         }
     };
 
