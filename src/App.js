@@ -127,8 +127,6 @@ export class App {
             mode: this.currentMode
         };
 
-
-
         let gui = new GUI().title('Evaluate Dataset Options');
         gui.add(this.options, 'mode', this.modes).name('Mode');
         gui.add(this.options, 'damping', 0, 1000).name('Damping');
@@ -145,15 +143,11 @@ export class App {
 
         this.initOnlyOnePlaneSytem();
 
-        //this.initMultiPlaneSytem();
-
         this.initSkullSystem();
 
         this.initHead();
 
-        console.log(this.scene)
-
-
+        console.log(this.scene);
 
         // Start loop
         this.animate();
@@ -163,7 +157,7 @@ export class App {
     onClick = (event) => {
         // calculate normalized mouse coordinates (-1 to +1)
 
-        if (!this.head)
+        if (!this.head || this.currentMode != this.modes.Head)
             return;
 
         this.mousePos.x = (event.clientX / window.innerWidth) * 2 - 1;
@@ -234,15 +228,6 @@ export class App {
                 this.hairCard.system.setParams(this.options);
             }
 
-            /*
-            else if (this.options.mode == this.modes.MultiPlane) {
-                for (let i = 0; i < this.hairCards.length; i++) {
-                    this.hairCards[i].system.setParams(this.options);
-
-                }
-            }
-            */
-
             else if (this.options.mode == this.modes.Skull || this.options.mode == this.modes.Head) {
                 //this.skull.moveSkull(0, 2, 0);
                 let model = this.options.mode == this.modes.Skull ? this.skull : this.head;
@@ -264,14 +249,6 @@ export class App {
         else if (this.options.mode == this.modes.Plane) {
             this.hairCard.system = new ParticleSystemFromCard(this.hairCard.initWPos, this.options);
         }
-
-        /*
-        else if (this.options.mode == this.modes.MultiPlane) {
-            for (let i = 0; i < this.hairCards.length; i++) {
-                this.hairCards[i].system = new ParticleSystemFromCard(this.hairCards[i].initWPos, this.options);
-            }
-        }
-        */
 
         else if (this.options.mode == this.modes.Skull || this.options.mode == this.modes.Head) {
             let model = this.options.mode == this.modes.Skull ? this.skull : this.head;
@@ -359,28 +336,6 @@ export class App {
         this.hairCard.setVisible(false);
     };
 
-    /*
-    initMultiPlaneSytem() {
-        let numOfHairCards = 7;
-        for (let i = 0; i < numOfHairCards; i++) {
-
-            let cardMesh = this.createHairCard();
-
-            // Set the position of the mesh to be at the origin
-            cardMesh.position.set(-numOfHairCards / 4 + i / 2, 1.5, 0);
-            cardMesh.rotateX(-1);
-            cardMesh.updateMatrixWorld();
-
-            let { system, initWPos } = this.loadParticleSystemFromCard(cardMesh);
-            // Add the mesh to the scene
-            this.scene.add(cardMesh);
-
-            let card = new entitySystem(cardMesh, system, initWPos);
-            card.setVisible(false);
-            this.hairCards.push(card);
-        }
-    }
-    */
 
     initSkullSystem() {
         const geometry = new THREE.SphereGeometry(0.1, 32, 16);
@@ -415,8 +370,11 @@ export class App {
             head.updateMatrixWorld(); // make sure the object's world matrix is up-to-date
 
             let indeces = [1500, 1510, 662, 1544, 631];
-            this.head = new skullSystem(head, indeces, this.options, [0, 0, 0]);
+            let pos = [0, 0, 0];
+            this.head = new skullSystem(head, indeces, this.options, pos);
             this.head.addToScene(this.scene);
+            this.head.setVisible(true);
+
         });
     }
 
@@ -460,50 +418,24 @@ export class App {
 
 
         if (this.currentMode == this.modes.Plane && this.hairCard) {
-            this.updateHairCard(delta, this.hairCard);
+            //this.updateHairCard(delta, this.hairCard);
+            this.hairCard.updateHairCardSystem(delta);
         }
 
-        /*
-        else if (this.currentMode == this.modes.MultiPlane) {
-            for (let i = 0; i < this.hairCards.length; i++) {
-                this.updateHairCard(delta, this.hairCards[i]);
-            }
-        }
-        */
 
         else if (this.currentMode == this.modes.Skull || this.currentMode == this.modes.Head) {
             let model = this.currentMode == this.modes.Skull ? this.skull : this.head;
             if (!model)
                 return;
 
-            for (let i = 0; i < model.hairCards.length; i++) {
-                this.updateHairCard(delta, model.hairCards[i]);
-            }
-
+            model.updateSystem(delta);
             this.updatePosition(delta);
 
         }
 
     };
 
-    updateHairCard(delta, { mesh, system }) {
-        system.update(delta);
-        //console.log(system.particles[1])
-        for (var i = 0; i < system.particles.length; i++) {
-            // Access the geometry data of the model
-            const position = mesh.geometry.getAttribute('position');
-            const particle = system.particles[i];
-
-            const vertexIndex = particle.index;
-            let aux = new THREE.Vector3(particle.position[0], particle.position[1], particle.position[2]);
-            let lPos = mesh.worldToLocal(aux);
-
-            position.setXYZ(vertexIndex, lPos.x - particle.offset[0] / 2, lPos.y - particle.offset[1] / 2, lPos.z - particle.offset[2] / 2);
-            position.setXYZ(vertexIndex + 1, lPos.x + particle.offset[0] / 2, lPos.y + particle.offset[1] / 2, lPos.z + particle.offset[2] / 2);
-            position.needsUpdate = true;
-
-        }
-    }
+    
 
     updateMode() {
 
@@ -514,13 +446,6 @@ export class App {
         else if (this.currentMode == this.modes.Plane)
             this.hairCard.setVisible(false);
 
-        /*
-        else if (this.currentMode == this.modes.MultiPlane) {
-            for (let i = 0; i < this.hairCards.length; i++) {
-                this.hairCards[i].setVisible(false);
-            }
-        }
-        */
         else if (this.currentMode == this.modes.Skull)
             this.skull.setVisible(false);
 
@@ -535,14 +460,6 @@ export class App {
         else if (this.options.mode == this.modes.Plane)
             this.hairCard.setVisible(true);
 
-        /*
-        else if (this.options.mode == this.modes.MultiPlane) {
-            for (let i = 0; i < this.hairCards.length; i++) {
-                this.hairCards[i].setVisible(true);
-            }
-        }
-        */
-
         else if (this.options.mode == this.modes.Skull)
             this.skull.setVisible(true);
 
@@ -552,7 +469,7 @@ export class App {
         this.currentMode = this.options.mode;
     }
 
-    updatePosition(delta) {
+    updatePosition(delta) {  // TODO put it in model?
         let model = this.currentMode == this.modes.Skull ? this.skull : (this.currentMode == this.modes.Head ? this.head : null) ;
         if(model == null)
             return;
