@@ -326,7 +326,7 @@ export class App {
 
         this.modes[this.modeIndeces.Plane].addToScene(this.scene);
         this.modes[this.modeIndeces.Plane].setVisible(this.currentModeIndex == this.modeIndeces.Plane);
-        this.modes[this.modeIndeces.Plane].showControlHairs(this.options.showControlHair);
+        this.modes[this.modeIndeces.Plane].showControlHairs(this.options.showControlHairs);
     };
 
 
@@ -340,7 +340,7 @@ export class App {
 
         this.modes[this.modeIndeces.Skull].addToScene(this.scene);
         this.modes[this.modeIndeces.Skull].setVisible(this.currentModeIndex == this.modeIndeces.Skull);
-        this.modes[this.modeIndeces.Skull].showControlHairs(this.options.showControlHair);
+        this.modes[this.modeIndeces.Skull].showControlHairs(this.options.showControlHairs);
 
     }
 
@@ -368,7 +368,7 @@ export class App {
             this.modes[this.modeIndeces.Head] = new skullSystem(head, indeces, this.options, pos);
             this.modes[this.modeIndeces.Head].addToScene(this.scene);
             this.modes[this.modeIndeces.Head].setVisible(this.currentModeIndex == this.modeIndeces.Head);
-            this.modes[this.modeIndeces.Head].showControlHairs(this.options.showControlHair);
+            this.modes[this.modeIndeces.Head].showControlHairs(this.options.showControlHairs);
 
         });
     }
@@ -464,19 +464,19 @@ export class App {
         else if (this.options.mode == this.modeIndeces.Plane)
         {
             this.modes[this.modeIndeces.Plane].setVisible(true);
-            this.modes[this.modeIndeces.Plane].showControlHairs(this.options.showControlHair);
+            this.modes[this.modeIndeces.Plane].showControlHairs(this.options.showControlHairs);
         }
 
         else if (this.options.mode == this.modeIndeces.Skull)
         {
             this.modes[this.modeIndeces.Skull].setVisible(true);
-            this.modes[this.modeIndeces.Skull].showControlHairs(this.options.showControlHair);
+            this.modes[this.modeIndeces.Skull].showControlHairs(this.options.showControlHairs);
         }
 
         else if (this.options.mode == this.modeIndeces.Head)
         {
             this.modes[this.modeIndeces.Head].setVisible(true);
-            this.modes[this.modeIndeces.Head].showControlHairs(this.options.showControlHair);
+            this.modes[this.modeIndeces.Head].showControlHairs(this.options.showControlHairs);
         }
 
         this.currentModeIndex = this.options.mode;

@@ -143,7 +143,7 @@ export class skullSystem {
     addToScene = (scene) => {
         scene.add(this.skull);
         for (let i = 0; i < this.hairCards.length; i++) {
-            scene.add(this.hairCards[i].mesh);
+            this.hairCards[i].addToScene(scene);
         }
     }
 
