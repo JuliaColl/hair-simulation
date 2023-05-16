@@ -21,8 +21,6 @@ export class App {
 
         this.options = {};
 
-        this.hairCards = [];
-
         // fix time step
         this.dt = 0.01;
         this.accumulator = 0.0;
@@ -107,15 +105,17 @@ export class App {
         }
 
         // init gui
-        this.modes = {
+        this.modeIndeces = {
             MassSpring: 0,
             Plane: 1,
-            //MultiPlane: 2,
-            Skull: 3,
-            Head: 4
+            Skull: 2,
+            Head: 3
         }
 
-        this.currentMode = this.modes.Head;
+        this.currentModeIndex = this.modeIndeces.Head;
+
+        this.modes = [];
+
 
         this.options = {
             damping: 100,
@@ -124,22 +124,29 @@ export class App {
             mass: 1.5,
             set: () => { this.set() },
             restart: () => { this.restart() },
-            mode: this.currentMode,
+            mode: this.currentModeIndex,
             showControlHairs: false
         };
 
         let gui = new GUI().title('Evaluate Dataset Options');
-        gui.add(this.options, 'mode', this.modes).name('Mode');
+        gui.add(this.options, 'mode', this.modeIndeces).name('Mode');
         gui.add(this.options, 'damping', 0, 1000).name('Damping');
         gui.add(this.options, 'k', 0, 1000).name('K');
         gui.add(this.options, 'gravity', -100, 0).name('Gravity');
         gui.add(this.options, 'mass', 0, 100).name('Mass');
-        gui.add(this.options, 'showControlHairs').name('Show ControlHairs');
+        gui.add(this.options, 'showControlHairs').name('Show Control Hairs');
 
         gui.add(this.options, 'set').name('Set params');
         gui.add(this.options, 'restart').name('Restart demo');
 
-
+        gui.onChange( event => {
+            if(event.property === 'showControlHairs'){
+                if (this.currentModeIndex == this.modeIndeces.MassSpring)
+                    return;
+                
+                this.modes[this.currentModeIndex].showControlHairs(event.value);
+            }
+        })
 
         // init models
         this.initOnlyMassSpringSystem();
@@ -160,7 +167,7 @@ export class App {
     onClick = (event) => {
         // calculate normalized mouse coordinates (-1 to +1)
 
-        if (!this.head || this.currentMode != this.modes.Head)
+        if (!this.modes[this.modeIndeces.Head] || this.currentModeIndex != this.modeIndeces.Head)
             return;
 
         this.mousePos.x = (event.clientX / window.innerWidth) * 2 - 1;
@@ -170,11 +177,11 @@ export class App {
 
         raycaster.setFromCamera(this.mousePos, this.camera);
 
-        this.head.skull.updateMatrixWorld();
-        let position = this.head.skull.geometry.attributes.position;
+        this.modes[this.modeIndeces.Head].skull.updateMatrixWorld();
+        let position = this.modes[this.modeIndeces.Head].skull.geometry.attributes.position;
 
         // get an array of intersections between the ray and the mesh
-        let intersects = raycaster.intersectObject(this.head.skull);
+        let intersects = raycaster.intersectObject(this.modes[this.modeIndeces.Head].skull);
 
         if (intersects.length > 0) {
 
@@ -195,7 +202,7 @@ export class App {
             const faceIndex = intersects[0].faceIndex;
     
             // get the vertex indices of the face
-            const vertexIndices = this.head.skull.geometry.index.array.slice(
+            const vertexIndices = this.modes[this.modeIndeces.Head].skull.geometry.index.array.slice(
                 faceIndex * 3,
                 faceIndex * 3 + 3
             );
@@ -221,19 +228,19 @@ export class App {
 
 
     set() {
-        if (this.currentMode == this.options.mode) {
+        if (this.currentModeIndex == this.options.mode) {
 
-            if (this.options.mode == this.modes.MassSpring) {
-                this.particleSystem.setParams(this.options);
+            if (this.options.mode == this.modeIndeces.MassSpring) {
+                this.modes[this.modeIndeces.MassSpring].setParams(this.options);
             }
 
-            else if (this.options.mode == this.modes.Plane) {
-                this.hairCard.system.setParams(this.options);
+            else if (this.options.mode == this.modeIndeces.Plane) {
+                this.modes[this.modeIndeces.Plane].system.setParams(this.options);
             }
 
-            else if (this.options.mode == this.modes.Skull || this.options.mode == this.modes.Head) {
-                //this.skull.moveSkull(0, 2, 0);
-                let model = this.options.mode == this.modes.Skull ? this.skull : this.head;
+            else if (this.options.mode == this.modeIndeces.Skull || this.options.mode == this.modeIndeces.Head) {
+                //this.modes[this.modeIndeces.Skull].moveSkull(0, 2, 0);
+                let model = this.options.mode == this.modeIndeces.Skull ? this.modes[this.modeIndeces.Skull] : this.modes[this.modeIndeces.Head];
                 for (let i = 0; i < model.hairCards.length; i++) {
                     model.hairCards[i].system.setParams(this.options);
                 }
@@ -244,17 +251,17 @@ export class App {
     };
 
     restart() {
-        if (this.options.mode == this.modes.MassSpring) {
-            this.particleSystem.setParams(this.options);
-            this.particleSystem.restart();
+        if (this.options.mode == this.modeIndeces.MassSpring) {
+            this.modes[this.modeIndeces.MassSpring].setParams(this.options);
+            this.modes[this.modeIndeces.MassSpring].restart();
         }
 
-        else if (this.options.mode == this.modes.Plane) {
-            this.hairCard.restart(this.options, new THREE.Vector3(0, 1.5, 0));
+        else if (this.options.mode == this.modeIndeces.Plane) {
+            this.modes[this.modeIndeces.Plane].restart(this.options, new THREE.Vector3(0, 1.5, 0));
         }
 
-        else if (this.options.mode == this.modes.Skull || this.options.mode == this.modes.Head) {
-            let model = this.options.mode == this.modes.Skull ? this.skull : this.head;
+        else if (this.options.mode == this.modeIndeces.Skull || this.options.mode == this.modeIndeces.Head) {
+            let model = this.options.mode == this.modeIndeces.Skull ? this.modes[this.modeIndeces.Skull] : this.modes[this.modeIndeces.Head];
             model.restart(this.options);
         }
 
@@ -297,29 +304,29 @@ export class App {
 
     initOnlyMassSpringSystem() {
         var length = 4;
-        this.particleSystem = new MultipleSpringMassSystem(length, this.options);
+        this.modes[this.modeIndeces.MassSpring] = new MultipleSpringMassSystem(length, this.options);
         for (var i = 0; i < length; i++) {
-            this.scene.add(this.particleSystem.particles[i]);
+            this.scene.add(this.modes[this.modeIndeces.MassSpring].particles[i]);
             if (i > 0) {
-                this.scene.add(this.particleSystem.lines[i]);
+                this.scene.add(this.modes[this.modeIndeces.MassSpring].lines[i]);
             }
         }
 
-        this.particleSystem.setVisible(false);
+        this.modes[this.modeIndeces.MassSpring].setVisible(false);
 
 
     };
 
     initOnlyOnePlaneSytem() {
                 
-        this.hairCard = new entitySystem(null, null, null);
-        this.hairCard.initHairSystem(0, new THREE.Vector3(0, 1.5, 0), this.options);
-        this.hairCard.mesh.rotateX(-1);
-        this.hairCard.mesh.updateMatrixWorld();
+        this.modes[this.modeIndeces.Plane] = new entitySystem(null, null, null);
+        this.modes[this.modeIndeces.Plane].initHairSystem(0, new THREE.Vector3(0, 1.5, 0), this.options);
+        this.modes[this.modeIndeces.Plane].mesh.rotateX(-1);
+        this.modes[this.modeIndeces.Plane].mesh.updateMatrixWorld();
 
-        this.hairCard.addToScene(this.scene);
-        this.hairCard.setVisible(this.currentMode == this.modes.Plane);
-        this.hairCard.showControlHair(this.options.showControlHair);
+        this.modes[this.modeIndeces.Plane].addToScene(this.scene);
+        this.modes[this.modeIndeces.Plane].setVisible(this.currentModeIndex == this.modeIndeces.Plane);
+        this.modes[this.modeIndeces.Plane].showControlHairs(this.options.showControlHair);
     };
 
 
@@ -329,11 +336,11 @@ export class App {
         const sphere = new THREE.Points(geometry, material);
 
         let indeces = [200, 210, 220, 230, 240, 250, 260, 270, 280];
-        this.skull = new skullSystem(sphere, indeces, this.options, [0, 1.3, 0]);
+        this.modes[this.modeIndeces.Skull] = new skullSystem(sphere, indeces, this.options, [0, 1.3, 0]);
 
-        this.skull.addToScene(this.scene);
-        this.skull.setVisible(this.currentMode == this.modes.Skull);
-        this.skull.showControlHairs(this.options.showControlHair);
+        this.modes[this.modeIndeces.Skull].addToScene(this.scene);
+        this.modes[this.modeIndeces.Skull].setVisible(this.currentModeIndex == this.modeIndeces.Skull);
+        this.modes[this.modeIndeces.Skull].showControlHairs(this.options.showControlHair);
 
     }
 
@@ -350,7 +357,7 @@ export class App {
             //get head
             let head = model.getObjectByName("Body");
 
-            if (this.currentMode != this.modes.Head)
+            if (this.currentModeIndex != this.modeIndeces.Head)
                 head.visible = false;
 
             head.material.wireframe = true;
@@ -358,10 +365,10 @@ export class App {
 
             let indeces = [1500, 1510, 662, 1544, 631];
             let pos = [0, 0, 0];
-            this.head = new skullSystem(head, indeces, this.options, pos);
-            this.head.addToScene(this.scene);
-            this.head.setVisible(this.currentMode == this.modes.Head);
-            this.head.showControlHairs(this.options.showControlHair);
+            this.modes[this.modeIndeces.Head] = new skullSystem(head, indeces, this.options, pos);
+            this.modes[this.modeIndeces.Head].addToScene(this.scene);
+            this.modes[this.modeIndeces.Head].setVisible(this.currentModeIndex == this.modeIndeces.Head);
+            this.modes[this.modeIndeces.Head].showControlHairs(this.options.showControlHair);
 
         });
     }
@@ -396,23 +403,23 @@ export class App {
 
     update(delta) {
 
-        if (this.currentMode != this.options.mode)
+        if (this.currentModeIndex != this.options.mode)
             this.updateMode();
 
 
-        if (this.currentMode == this.modes.MassSpring && this.particleSystem) {
-            this.particleSystem.update(delta);
+        if (this.currentModeIndex == this.modeIndeces.MassSpring && this.modes[this.modeIndeces.MassSpring]) {
+            this.modes[this.modeIndeces.MassSpring].update(delta);
         }
 
 
-        if (this.currentMode == this.modes.Plane && this.hairCard) {
-            //this.updateHairCard(delta, this.hairCard);
-            this.hairCard.updateHairCardSystem(delta);
+        if (this.currentModeIndex == this.modeIndeces.Plane && this.modes[this.modeIndeces.Plane]) {
+            //this.updateHairCard(delta, this.modes[this.modeIndeces.Plane]);
+            this.modes[this.modeIndeces.Plane].updateHairCardSystem(delta);
         }
 
 
-        else if (this.currentMode == this.modes.Skull || this.currentMode == this.modes.Head) {
-            let model = this.currentMode == this.modes.Skull ? this.skull : this.head;
+        else if (this.currentModeIndex == this.modeIndeces.Skull || this.currentModeIndex == this.modeIndeces.Head) {
+            let model = this.currentModeIndex == this.modeIndeces.Skull ? this.modes[this.modeIndeces.Skull] : this.modes[this.modeIndeces.Head];
             if (!model)
                 return;
 
@@ -428,55 +435,55 @@ export class App {
     updateMode() {
 
         // hide previous mode 
-        if (this.currentMode == this.modes.MassSpring)
-            this.particleSystem.setVisible(false);
+        if (this.currentModeIndex == this.modeIndeces.MassSpring)
+            this.modes[this.modeIndeces.MassSpring].setVisible(false);
 
-        else if (this.currentMode == this.modes.Plane)
+        else if (this.currentModeIndex == this.modeIndeces.Plane)
         {
-            this.hairCard.setVisible(false);
-            this.hairCard.showControlHair(false);
+            this.modes[this.modeIndeces.Plane].setVisible(false);
+            this.modes[this.modeIndeces.Plane].showControlHairs(false);
         }
 
-        else if (this.currentMode == this.modes.Skull)
+        else if (this.currentModeIndex == this.modeIndeces.Skull)
         {
-            this.skull.setVisible(false);
-            this.skull.showControlHairs(false);
+            this.modes[this.modeIndeces.Skull].setVisible(false);
+            this.modes[this.modeIndeces.Skull].showControlHairs(false);
         }
 
-        else if (this.currentMode == this.modes.Head)
+        else if (this.currentModeIndex == this.modeIndeces.Head)
         {
-            this.head.setVisible(false);
-            this.head.showControlHairs(false);
+            this.modes[this.modeIndeces.Head].setVisible(false);
+            this.modes[this.modeIndeces.Head].showControlHairs(false);
         }
 
 
         // show new mode 
-        if (this.options.mode == this.modes.MassSpring)
-            this.particleSystem.setVisible(true);
+        if (this.options.mode == this.modeIndeces.MassSpring)
+            this.modes[this.modeIndeces.MassSpring].setVisible(true);
 
-        else if (this.options.mode == this.modes.Plane)
+        else if (this.options.mode == this.modeIndeces.Plane)
         {
-            this.hairCard.setVisible(true);
-            this.hairCard.showControlHair(this.options.showControlHair);
+            this.modes[this.modeIndeces.Plane].setVisible(true);
+            this.modes[this.modeIndeces.Plane].showControlHairs(this.options.showControlHair);
         }
 
-        else if (this.options.mode == this.modes.Skull)
+        else if (this.options.mode == this.modeIndeces.Skull)
         {
-            this.skull.setVisible(true);
-            this.skull.showControlHairs(this.options.showControlHair);
+            this.modes[this.modeIndeces.Skull].setVisible(true);
+            this.modes[this.modeIndeces.Skull].showControlHairs(this.options.showControlHair);
         }
 
-        else if (this.options.mode == this.modes.Head)
+        else if (this.options.mode == this.modeIndeces.Head)
         {
-            this.head.setVisible(true);
-            this.head.showControlHairs(this.options.showControlHair);
+            this.modes[this.modeIndeces.Head].setVisible(true);
+            this.modes[this.modeIndeces.Head].showControlHairs(this.options.showControlHair);
         }
 
-        this.currentMode = this.options.mode;
+        this.currentModeIndex = this.options.mode;
     }
 
     updatePosition(delta) {  // TODO put it in model?
-        let model = this.currentMode == this.modes.Skull ? this.skull : (this.currentMode == this.modes.Head ? this.head : null) ;
+        let model = this.currentModeIndex == this.modeIndeces.Skull ? this.modes[this.modeIndeces.Skull] : (this.currentModeIndex == this.modeIndeces.Head ? this.modes[this.modeIndeces.Head] : null) ;
         if(model == null)
             return;
             

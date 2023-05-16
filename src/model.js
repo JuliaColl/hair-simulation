@@ -26,7 +26,7 @@ export class entitySystem {
         this.mesh.visible = bool;
     }
 
-    showControlHair = (bool) => {
+    showControlHairs = (bool) => {
         this.system.showLines(bool);
     }
 
@@ -207,7 +207,7 @@ export class skullSystem {
 
     showControlHairs = (bool) => {
         for (let i = 0; i < this.hairCards.length; i++) {
-            this.hairCards[i].showControlHair(bool);
+            this.hairCards[i].showControlHairs(bool);
         }
     }
 }
