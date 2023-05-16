@@ -64,6 +64,8 @@ export class entitySystem {
         this.initWPos = initWPos;
         this.skullIndex = index;
 
+        console.log(this.mesh.geometry.getAttribute('normal'));
+
     }
 
     createHairCard = () => {
@@ -87,6 +89,8 @@ export class entitySystem {
         for (var i = 0; i < this.system.particles.length; i++) {
             // Access the geometry data of the model
             const position = this.mesh.geometry.getAttribute('position');
+            const normal = this.mesh.geometry.getAttribute('normal');
+
             const particle = this.system.particles[i];
 
             const vertexIndex = particle.index;
@@ -104,6 +108,12 @@ export class entitySystem {
     {
         this.system = new ParticleSystemFromCard(this.initWPos, options);
         this.system.setAnchor([worldPos.x, worldPos.y, worldPos.z]);
+    }
+
+    rotateCard(rad){
+        this.mesh.rotation.y += rad;
+        this.mesh.updateMatrixWorld();
+
     }
 }
 
@@ -195,7 +205,15 @@ export class skullSystem {
         this.skull.rotation.y += rad;
         this.skull.updateMatrixWorld();
 
+        //this.rotateCards(rad);
         this.updateHairCardsPos();
+    }
+
+    rotateCards(rad){
+        for (let i = 0; i < this.hairCards.length; i++) {
+            this.hairCards[i].rotateCard(rad);
+
+        }
     }
 
     setVisible = (bool) => {

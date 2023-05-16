@@ -413,8 +413,9 @@ export class App {
 
 
         if (this.currentModeIndex == this.modeIndeces.Plane && this.modes[this.modeIndeces.Plane]) {
-            //this.updateHairCard(delta, this.modes[this.modeIndeces.Plane]);
             this.modes[this.modeIndeces.Plane].updateHairCardSystem(delta);
+            this.updatePositionCard(delta);
+
         }
 
 
@@ -490,7 +491,7 @@ export class App {
         let tt = delta * 0.2;
         if (this.isArrowUp) {
             let position = model.skull.position;
-            model.moveSkull(position.x, position.y + tt, position.z); //TODO: add dt somewhere in the future if I want to keep it
+            model.moveSkull(position.x, position.y + tt, position.z); 
         }
         if (this.isArrowDown) {
             let position = model.skull.position;
@@ -506,9 +507,35 @@ export class App {
         }
         
         if (this.isSpace) {
-            model.rotateSkull(delta);
+            model.rotateSkull(delta*1.5);
         }
         
+    }
+
+    updatePositionCard(delta) { 
+        let model = this.currentModeIndex == this.modeIndeces.Plane ? this.modes[this.modeIndeces.Plane] : null ;
+
+        let tt = delta * 0.2;
+        if (this.isArrowUp) {
+            let position = model.system.particles[0].position;
+            model.setPosition(position[0], position[1] + tt, position[2]); 
+        }
+        if (this.isArrowDown) {
+            let position = model.system.particles[0].position;
+            model.setPosition(position[0], position[1] - tt, position[2]);
+        }
+        if (this.isArrowLeft) {
+            let position = model.system.particles[0].position;
+            model.setPosition(position[0] - tt, position[1], position[2]);
+        }
+        if (this.isArrowRight) {
+            let position = model.system.particles[0].position;
+            model.setPosition(position[0] + tt, position[1], position[2]);
+        }
+        
+        if (this.isSpace) {
+            this.modes[this.modeIndeces.Plane].rotateCard(delta*1.5);
+        }
     }
 
 }
