@@ -371,7 +371,8 @@ export class ParticleSystemFromCard {
             this.particles.push(p)
 
             //add lines to show control hairs
-            this.lines.push(createLine());
+            if (i != position.length - 2)
+                this.lines.push(createLine());
 
 
         }
@@ -438,12 +439,12 @@ export class ParticleSystemFromCard {
             // Update line
             let start = new THREE.Vector3(this.particles[j].position[0], this.particles[j].position[1], this.particles[j].position[2]);
             let end = new THREE.Vector3(endPos[0], endPos[1], endPos[2]);
-            this.lines[j].geometry.setFromPoints([start, end]);
+            this.lines[j - 1].geometry.setFromPoints([start, end]);
         }
     }
 
     showLines( bool ){
-        for (let i = 0; i < this.particles.length; i++ ){
+        for (let i = 0; i < this.lines.length; i++ ){
             this.lines[i].visible = bool;
         }
     }

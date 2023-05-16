@@ -205,7 +205,7 @@ export class skullSystem {
         this.skull.rotation.y += rad;
         this.skull.updateMatrixWorld();
 
-        //this.rotateCards(rad);
+        this.rotateCards(rad);
         this.updateHairCardsPos();
     }
 
