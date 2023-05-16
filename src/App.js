@@ -124,7 +124,8 @@ export class App {
             mass: 1.5,
             set: () => { this.set() },
             restart: () => { this.restart() },
-            mode: this.currentMode
+            mode: this.currentMode,
+            showControlHairs: false
         };
 
         let gui = new GUI().title('Evaluate Dataset Options');
@@ -133,6 +134,8 @@ export class App {
         gui.add(this.options, 'k', 0, 1000).name('K');
         gui.add(this.options, 'gravity', -100, 0).name('Gravity');
         gui.add(this.options, 'mass', 0, 100).name('Mass');
+        gui.add(this.options, 'showControlHairs').name('Show ControlHairs');
+
         gui.add(this.options, 'set').name('Set params');
         gui.add(this.options, 'restart').name('Restart demo');
 
@@ -247,7 +250,7 @@ export class App {
         }
 
         else if (this.options.mode == this.modes.Plane) {
-            this.hairCard.system = new ParticleSystemFromCard(this.hairCard.initWPos, this.options);
+            this.hairCard.restart(this.options, new THREE.Vector3(0, 1.5, 0));
         }
 
         else if (this.options.mode == this.modes.Skull || this.options.mode == this.modes.Head) {
@@ -258,6 +261,7 @@ export class App {
 
     };
 
+    /*
     createHairCard() {
         const cardGeometry = new THREE.PlaneGeometry(0.05, 0.1, 1, 4);
         //const cardMaterial = new THREE.MeshBasicMaterial({ color: 0xffff00, side: THREE.DoubleSide });
@@ -289,6 +293,7 @@ export class App {
         // Add the mesh to the scene
         this.scene.add(this.coneMesh);
     }
+    */
 
     initOnlyMassSpringSystem() {
         var length = 4;
@@ -305,35 +310,16 @@ export class App {
 
     };
 
-    loadParticleSystemFromCard(mesh) {
-        let position = mesh.geometry.getAttribute('position')
-        let initWPos = [];
-        // change to world position
-        for (let i = 0; i < position.count; i++) {
-            let vertex = new THREE.Vector3();
-            vertex.fromBufferAttribute(position, i);
-            initWPos.push(mesh.localToWorld(vertex));
-        }
-
-        return { system: new ParticleSystemFromCard(initWPos, this.options), initWPos: initWPos };
-    }
-
     initOnlyOnePlaneSytem() {
-        let cardMesh = this.createHairCard();
+                
+        this.hairCard = new entitySystem(null, null, null);
+        this.hairCard.initHairSystem(0, new THREE.Vector3(0, 1.5, 0), this.options);
+        this.hairCard.mesh.rotateX(-1);
+        this.hairCard.mesh.updateMatrixWorld();
 
-        cardMesh.position.set(0, 1.5, 0);
-        //cardMesh.rotateY(0.75);
-        cardMesh.rotateX(-1);
-        //cardMesh.rotateZ(0);
-        cardMesh.updateMatrixWorld();
-
-        // Add the mesh to the scene
-        this.scene.add(cardMesh);
-
-        let { system, initWPos } = this.loadParticleSystemFromCard(cardMesh);
-
-        this.hairCard = new entitySystem(cardMesh, system, initWPos);
-        this.hairCard.setVisible(false);
+        this.hairCard.addToScene(this.scene);
+        this.hairCard.setVisible(this.currentMode == this.modes.Plane);
+        this.hairCard.showControlHair(this.options.showControlHair);
     };
 
 
@@ -346,7 +332,8 @@ export class App {
         this.skull = new skullSystem(sphere, indeces, this.options, [0, 1.3, 0]);
 
         this.skull.addToScene(this.scene);
-        this.skull.setVisible(false);
+        this.skull.setVisible(this.currentMode == this.modes.Skull);
+        this.skull.showControlHairs(this.options.showControlHair);
 
     }
 
@@ -373,7 +360,8 @@ export class App {
             let pos = [0, 0, 0];
             this.head = new skullSystem(head, indeces, this.options, pos);
             this.head.addToScene(this.scene);
-            this.head.setVisible(true);
+            this.head.setVisible(this.currentMode == this.modes.Head);
+            this.head.showControlHairs(this.options.showControlHair);
 
         });
     }
@@ -444,13 +432,22 @@ export class App {
             this.particleSystem.setVisible(false);
 
         else if (this.currentMode == this.modes.Plane)
+        {
             this.hairCard.setVisible(false);
+            this.hairCard.showControlHair(false);
+        }
 
         else if (this.currentMode == this.modes.Skull)
+        {
             this.skull.setVisible(false);
+            this.skull.showControlHairs(false);
+        }
 
         else if (this.currentMode == this.modes.Head)
+        {
             this.head.setVisible(false);
+            this.head.showControlHairs(false);
+        }
 
 
         // show new mode 
@@ -458,13 +455,22 @@ export class App {
             this.particleSystem.setVisible(true);
 
         else if (this.options.mode == this.modes.Plane)
+        {
             this.hairCard.setVisible(true);
+            this.hairCard.showControlHair(this.options.showControlHair);
+        }
 
         else if (this.options.mode == this.modes.Skull)
+        {
             this.skull.setVisible(true);
+            this.skull.showControlHairs(this.options.showControlHair);
+        }
 
         else if (this.options.mode == this.modes.Head)
+        {
             this.head.setVisible(true);
+            this.head.showControlHairs(this.options.showControlHair);
+        }
 
         this.currentMode = this.options.mode;
     }

@@ -346,6 +346,9 @@ export class ParticleSystemFromCard {
 
     mode = modes.massSpring;
 
+    lines = [];
+
+
     constructor(position, {damping, k, gravity, mass}) {
 
         this.mass = mass;
@@ -366,6 +369,11 @@ export class ParticleSystemFromCard {
 
             var p = new Particle([pos[0] + offset[0]/2, pos[1] + offset[1]/2, pos[2] + offset[2]/2 ], velocity, i, offset);
             this.particles.push(p)
+
+            //add lines to show control hairs
+            this.lines.push(createLine());
+
+
         }
         
         //this.particles[0].position.set(-3, 3, 0);
@@ -425,8 +433,19 @@ export class ParticleSystemFromCard {
             this.particles[j].velocity[0] = velocity1[0];
             this.particles[j].velocity[1] = velocity1[1];
             this.particles[j].velocity[2] = velocity1[2];
+
+            
+            // Update line
+            let start = new THREE.Vector3(this.particles[j].position[0], this.particles[j].position[1], this.particles[j].position[2]);
+            let end = new THREE.Vector3(endPos[0], endPos[1], endPos[2]);
+            this.lines[j].geometry.setFromPoints([start, end]);
         }
     }
 
+    showLines( bool ){
+        for (let i = 0; i < this.particles.length; i++ ){
+            this.lines[i].visible = bool;
+        }
+    }
     
 }

@@ -6,6 +6,7 @@ export class entitySystem {
     system = null;
     initWPos = [];
     skullIndex = null;
+
     
 
     constructor(mesh, system, initWPos, skullIndex = 0) {
@@ -16,13 +17,24 @@ export class entitySystem {
     }
 
     setPosition = (x, y, z) => {
-        this.mesh.position.set(x, y, z);
-        this.mesh.updateMatrixWorld();
+        //this.mesh.position.set(x, y, z);
+        //this.mesh.updateMatrixWorld();
         this.system.setAnchor([x, y, z]);
     };
 
     setVisible = (bool) => {
         this.mesh.visible = bool;
+    }
+
+    showControlHair = (bool) => {
+        this.system.showLines(bool);
+    }
+
+    addToScene = (scene) => {
+        scene.add(this.mesh);
+        for (let i = 0; i < this.system.lines.length; i++) {
+            scene.add(this.system.lines[i]);
+        }
     }
 
     loadParticleSystemFromCard = (mesh, options) => {
@@ -86,6 +98,12 @@ export class entitySystem {
             position.needsUpdate = true;
 
         }
+    }
+
+    restart(options, worldPos)
+    {
+        this.system = new ParticleSystemFromCard(this.initWPos, options);
+        this.system.setAnchor([worldPos.x, worldPos.y, worldPos.z]);
     }
 }
 
@@ -153,16 +171,14 @@ export class skullSystem {
         this.moveSkull(this.initPosition[0], this.initPosition[1], this.initPosition[2]);
 
         for (let i = 0; i < this.hairCards.length; i++) {
-            this.hairCards[i].system = new ParticleSystemFromCard(this.hairCards[i].initWPos, options);
-
             let position = this.skull.geometry.getAttribute('position');
 
             let vertex = new THREE.Vector3();
             let index =  this.hairCards[i].skullIndex;
             vertex.fromBufferAttribute(position, index);
             let worldPos = this.skull.localToWorld(vertex);
-            this.hairCards[i].system.setAnchor([worldPos.x, worldPos.y, worldPos.z]);
 
+            this.hairCards[i].restart(options, worldPos); 
         }
     };
 
@@ -189,5 +205,9 @@ export class skullSystem {
         }
     }
 
-    
+    showControlHairs = (bool) => {
+        for (let i = 0; i < this.hairCards.length; i++) {
+            this.hairCards[i].showControlHair(bool);
+        }
+    }
 }
