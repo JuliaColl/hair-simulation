@@ -83,6 +83,9 @@ export class App {
 
             else if (e.code === 'Space') 
                 this.isSpace = true;
+
+            else if(e.code === 'KeyU')
+                this.isU = true;
         };
 
         document.onkeyup = (e) => {
@@ -361,6 +364,8 @@ export class App {
                 head.visible = false;
 
             head.material.wireframe = true;
+            head.material.depthTest = true; // Example value
+
             head.updateMatrixWorld(); // make sure the object's world matrix is up-to-date
 
             let indeces = [1500, 1510, 662, 1544, 631];
@@ -424,7 +429,7 @@ export class App {
             if (!model)
                 return;
 
-            model.updateSystem(delta);
+            //model.updateSystem(delta);
             this.updatePosition(delta);
 
         }
@@ -508,6 +513,11 @@ export class App {
         
         if (this.isSpace) {
             model.rotateSkull(delta*1.5);
+        }
+
+        if(this.isU) {
+            model.updateSystem(delta);
+
         }
         
     }
