@@ -84,8 +84,10 @@ export class App {
             else if (e.code === 'Space') 
                 this.isSpace = true;
 
+            /*
             else if(e.code === 'KeyU')
                 this.isU = true;
+            */
         };
 
         document.onkeyup = (e) => {
@@ -107,7 +109,6 @@ export class App {
 
         }
 
-        // init gui
         this.modeIndeces = {
             MassSpring: 0,
             Plane: 1,
@@ -119,7 +120,7 @@ export class App {
 
         this.modes = [];
 
-
+        // init gui
         this.options = {
             damping: 100,
             k: 800,
@@ -128,7 +129,8 @@ export class App {
             set: () => { this.set() },
             restart: () => { this.restart() },
             mode: this.currentModeIndex,
-            showControlHairs: false
+            showControlHairs: false,
+            applyPhysics: false,
         };
 
         let gui = new GUI().title('Evaluate Dataset Options');
@@ -138,6 +140,7 @@ export class App {
         gui.add(this.options, 'gravity', -100, 0).name('Gravity');
         gui.add(this.options, 'mass', 0, 100).name('Mass');
         gui.add(this.options, 'showControlHairs').name('Show Control Hairs');
+        gui.add(this.options, 'applyPhysics').name('Apply Physics');
 
         gui.add(this.options, 'set').name('Set params');
         gui.add(this.options, 'restart').name('Restart demo');
@@ -270,6 +273,8 @@ export class App {
 
 
     };
+
+    
 
     /*
     createHairCard() {
@@ -429,8 +434,12 @@ export class App {
             if (!model)
                 return;
 
-            //model.updateSystem(delta);
-            this.updatePosition(delta);
+            if(this.options.applyPhysics)
+            {
+                model.updateSystem(delta);
+                this.updatePosition(delta);
+            }
+            
 
         }
 
@@ -514,11 +523,6 @@ export class App {
         if (this.isSpace) {
             model.rotateSkull(delta*1.5);
         }
-
-        if(this.isU) {
-            model.updateSystem(delta);
-
-        }
         
     }
 
@@ -544,7 +548,7 @@ export class App {
         }
         
         if (this.isSpace) {
-            this.modes[this.modeIndeces.Plane].rotateCard(delta*1.5);
+            this.modes[this.modeIndeces.Plane].rotateCard(delta);
         }
     }
 

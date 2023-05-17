@@ -149,11 +149,14 @@ export class entitySystem {
             const particle = this.system.particles[i];
 
             const vertexIndex = particle.index;
-            let aux = new THREE.Vector3(particle.position[0], particle.position[1], particle.position[2]);
-            let lPos = this.mesh.worldToLocal(aux);
+            let aux1 = new THREE.Vector3(particle.position[0] - particle.offset[0] / 2, particle.position[1] - particle.offset[1] / 2, particle.position[2] - particle.offset[2] / 2);
+            let lPos1 = this.mesh.worldToLocal(aux1);
+            
+            let aux2 = new THREE.Vector3(particle.position[0] + particle.offset[0] / 2, particle.position[1] + particle.offset[1] / 2, particle.position[2] + particle.offset[2] / 2);
+            let lPos2 = this.mesh.worldToLocal(aux2);
 
-            position.setXYZ(vertexIndex, lPos.x - particle.offset[0] / 2, lPos.y - particle.offset[1] / 2, lPos.z - particle.offset[2] / 2);
-            position.setXYZ(vertexIndex + 1, lPos.x + particle.offset[0] / 2, lPos.y + particle.offset[1] / 2, lPos.z + particle.offset[2] / 2);
+            position.setXYZ(vertexIndex, lPos1.x , lPos1.y , lPos1.z );
+            position.setXYZ(vertexIndex + 1, lPos2.x , lPos2.y, lPos2.z);
             position.needsUpdate = true;
 
         }
