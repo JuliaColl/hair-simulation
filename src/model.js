@@ -50,11 +50,59 @@ export class entitySystem {
         return { system: new ParticleSystemFromCard(initWPos, options), initWPos: initWPos };
     }
 
-    initHairSystem = (index, worldPos, options) => {
+    initHairSystem = (index, worldPos, options, worldNorm = null) => {
         let plane = this.createHairCard();
-
-        plane.position.set(worldPos.x, worldPos.y, worldPos.z);
+        plane.position.set(worldPos.x, worldPos.y , worldPos.z);
         plane.updateMatrixWorld();
+
+        if (worldNorm)
+        {
+            const desiredNormal = new THREE.Vector3().copy(worldNorm).negate();
+            
+            const planeNormal = plane.geometry.getAttribute('normal');
+            const rotationAxis = new THREE.Vector3().crossVectors(
+              new THREE.Vector3(
+                planeNormal.getX(0),
+                planeNormal.getY(0),
+                planeNormal.getZ(0)
+              ),
+              desiredNormal
+            ).normalize();
+
+            const currentNormalVector = new THREE.Vector3(
+                planeNormal.getX(0),
+                planeNormal.getY(0),
+                planeNormal.getZ(0)
+              );
+
+            const angle = currentNormalVector.angleTo(desiredNormal);
+
+            plane.rotateOnAxis(rotationAxis, angle);
+            plane.geometry.attributes.normal.needsUpdate = true;
+            plane.updateMatrixWorld();
+
+            let position = plane.geometry.getAttribute('position');
+
+            let vertex = new THREE.Vector3();
+
+            vertex.fromBufferAttribute(position, 0);
+            let currentWorldPos = plane.localToWorld(vertex);
+
+            let x =  worldPos.x + plane.position.x - currentWorldPos.x;
+            let y = worldPos.y + plane.position.y - currentWorldPos.y;
+            let z =  worldPos.z + plane.position.z - currentWorldPos.z;
+            plane.position.set(x, y, z);
+           
+        }
+
+        else{
+            plane.position.set(worldPos.x, worldPos.y - plane.geometry.height / 2, worldPos.z);
+        }
+
+
+
+        plane.updateMatrixWorld();
+
 
         let { system, initWPos } = this.loadParticleSystemFromCard(plane, options);
         system.setAnchor([worldPos.x, worldPos.y, worldPos.z]);
@@ -64,12 +112,18 @@ export class entitySystem {
         this.initWPos = initWPos;
         this.skullIndex = index;
 
-        console.log(this.mesh.geometry.getAttribute('normal'));
-
     }
 
     createHairCard = () => {
-        const cardGeometry = new THREE.PlaneGeometry(0.05, 0.1, 1, 4);
+        let width = 0.05;
+        let height = 0.1;
+        const cardGeometry = new THREE.PlaneGeometry(width, height, 1, 4);
+        
+        // add atributtes to store width and height
+        cardGeometry.height = height;
+        cardGeometry.width = width;
+        
+        
         //const cardMaterial = new THREE.MeshBasicMaterial({ color: 0xffff00, side: THREE.DoubleSide });
 
         const textureLoader = new THREE.TextureLoader();
@@ -79,7 +133,9 @@ export class entitySystem {
         let cardMesh = new THREE.Mesh(cardGeometry, cardMaterial);
         cardMesh.frustumCulled = false;
         cardMaterial.transparent = true;
-        
+        //cardMaterial.blending = THREE.NormalBlending; // Example value
+        //cardMaterial.depthTest = false; // Example value
+
         return cardMesh;
     }
 
@@ -89,7 +145,6 @@ export class entitySystem {
         for (var i = 0; i < this.system.particles.length; i++) {
             // Access the geometry data of the model
             const position = this.mesh.geometry.getAttribute('position');
-            const normal = this.mesh.geometry.getAttribute('normal');
 
             const particle = this.system.particles[i];
 
@@ -113,7 +168,6 @@ export class entitySystem {
     rotateCard(rad){
         this.mesh.rotation.y += rad;
         this.mesh.updateMatrixWorld();
-
     }
 }
 
@@ -133,6 +187,7 @@ export class skullSystem {
         this.initPosition = [...wPos];
 
         let position = this.skull.geometry.getAttribute('position');
+        let normals = this.skull.geometry.getAttribute('normal');
 
         let numOfHairCards = indeces.length;
         for (let i = 0; i < numOfHairCards; i++) {
@@ -140,11 +195,17 @@ export class skullSystem {
 
             let index = indeces[i];
 
+            //world position
             vertex.fromBufferAttribute(position, index);
             let worldPos = this.skull.localToWorld(vertex);
 
+            // normal
+            let normal = new THREE.Vector3();
+            normal.fromBufferAttribute(normals, index);
+            let worldNorm = this.skull.localToWorld(normal);
+
             let hairCard = new entitySystem(null, null, null);
-            hairCard.initHairSystem(index, worldPos, options);
+            hairCard.initHairSystem(index, worldPos, options, worldNorm);
             this.hairCards.push(hairCard);
         }
     }
