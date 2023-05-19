@@ -112,7 +112,7 @@ export class App {
         this.modeIndeces = {
             MassSpring: 0,
             Plane: 1,
-            Skull: 2,
+            //Skull: 2,
             Head: 3
         }
 
@@ -159,7 +159,7 @@ export class App {
 
         this.initOnlyOnePlaneSytem();
 
-        this.initSkullSystem();
+        //this.initSkullSystem();
 
         this.initHead();
 
@@ -244,9 +244,11 @@ export class App {
                 this.modes[this.modeIndeces.Plane].system.setParams(this.options);
             }
 
-            else if (this.options.mode == this.modeIndeces.Skull || this.options.mode == this.modeIndeces.Head) {
-                //this.modes[this.modeIndeces.Skull].moveSkull(0, 2, 0);
-                let model = this.options.mode == this.modeIndeces.Skull ? this.modes[this.modeIndeces.Skull] : this.modes[this.modeIndeces.Head];
+            //else if (this.options.mode == this.modeIndeces.Skull || this.options.mode == this.modeIndeces.Head) {
+            else if (this.options.mode == this.modeIndeces.Head) {
+                
+                //let model = this.options.mode == this.modeIndeces.Skull ? this.modes[this.modeIndeces.Skull] : this.modes[this.modeIndeces.Head];
+                let model = this.modes[this.modeIndeces.Head];
                 for (let i = 0; i < model.hairCards.length; i++) {
                     model.hairCards[i].system.setParams(this.options);
                 }
@@ -266,9 +268,11 @@ export class App {
             this.modes[this.modeIndeces.Plane].restart(this.options, new THREE.Vector3(0, 1.5, 0));
         }
 
+        
+        //else if (this.options.mode == this.modeIndeces.Head) {
         else if (this.options.mode == this.modeIndeces.Skull || this.options.mode == this.modeIndeces.Head) {
-            let model = this.options.mode == this.modeIndeces.Skull ? this.modes[this.modeIndeces.Skull] : this.modes[this.modeIndeces.Head];
-            model.restart(this.options);
+            //let model = this.options.mode == this.modeIndeces.Skull ? this.modes[this.modeIndeces.Skull] : this.modes[this.modeIndeces.Head];
+            this.modes[this.modeIndeces.Head].model.restart(this.options);
         }
 
 
@@ -338,6 +342,7 @@ export class App {
     };
 
 
+    /*
     initSkullSystem() {
         const geometry = new THREE.SphereGeometry(0.1, 32, 16);
         const material = new THREE.PointsMaterial({ size: 0.01, color: 'purple' });
@@ -351,7 +356,8 @@ export class App {
         this.modes[this.modeIndeces.Skull].showControlHairs(this.options.showControlHairs);
 
     }
-
+    */
+   
     initHead() {
 
         this.loaderGLB.load('./data/head.glb', (glb) => {
@@ -429,8 +435,11 @@ export class App {
         }
 
 
-        else if (this.currentModeIndex == this.modeIndeces.Skull || this.currentModeIndex == this.modeIndeces.Head) {
-            let model = this.currentModeIndex == this.modeIndeces.Skull ? this.modes[this.modeIndeces.Skull] : this.modes[this.modeIndeces.Head];
+        //else if (this.currentModeIndex == this.modeIndeces.Skull || this.currentModeIndex == this.modeIndeces.Head) {
+        else if (this.options.mode == this.modeIndeces.Skull || this.options.mode == this.modeIndeces.Head) {
+          
+            //let model = this.currentModeIndex == this.modeIndeces.Skull ? this.modes[this.modeIndeces.Skull] : this.modes[this.modeIndeces.Head];
+            let model = this.modes[this.modeIndeces.Head];
             if (!model)
                 return;
 
@@ -459,11 +468,13 @@ export class App {
             this.modes[this.modeIndeces.Plane].showControlHairs(false);
         }
 
+        /*
         else if (this.currentModeIndex == this.modeIndeces.Skull)
         {
             this.modes[this.modeIndeces.Skull].setVisible(false);
             this.modes[this.modeIndeces.Skull].showControlHairs(false);
         }
+        */
 
         else if (this.currentModeIndex == this.modeIndeces.Head)
         {
@@ -482,11 +493,13 @@ export class App {
             this.modes[this.modeIndeces.Plane].showControlHairs(this.options.showControlHairs);
         }
 
+        /*
         else if (this.options.mode == this.modeIndeces.Skull)
         {
             this.modes[this.modeIndeces.Skull].setVisible(true);
             this.modes[this.modeIndeces.Skull].showControlHairs(this.options.showControlHairs);
         }
+        */
 
         else if (this.options.mode == this.modeIndeces.Head)
         {
@@ -498,7 +511,8 @@ export class App {
     }
 
     updatePosition(delta) {  // TODO put it in model?
-        let model = this.currentModeIndex == this.modeIndeces.Skull ? this.modes[this.modeIndeces.Skull] : (this.currentModeIndex == this.modeIndeces.Head ? this.modes[this.modeIndeces.Head] : null) ;
+        //let model = this.currentModeIndex == this.modeIndeces.Skull ? this.modes[this.modeIndeces.Skull] : (this.currentModeIndex == this.modeIndeces.Head ? this.modes[this.modeIndeces.Head] : null) ;
+        let model = this.modes[this.currentModeIndex];
         if(model == null)
             return;
             
