@@ -67,47 +67,9 @@ export class App {
         // Set listeners and events
         window.addEventListener('resize', this.onWindowResize.bind(this));
         window.addEventListener('click', this.onClick);
-        document.onkeydown = (e) => {
+        document.onkeydown = (e) => { this.setKeyEvent(e, true); };
 
-            if (e.code === 'ArrowUp')
-                this.isArrowUp = true;
-
-            else if (e.code === 'ArrowDown')
-                this.isArrowDown = true;
-
-            else if (e.code === 'ArrowLeft')
-                this.isArrowLeft = true;
-
-            else if (e.code === 'ArrowRight')
-                this.isArrowRight = true;
-
-            else if (e.code === 'Space') 
-                this.isSpace = true;
-
-            /*
-            else if(e.code === 'KeyU')
-                this.isU = true;
-            */
-        };
-
-        document.onkeyup = (e) => {
-
-            if (e.code === 'ArrowUp')
-                this.isArrowUp = false;
-
-            else if (e.code === 'ArrowDown')
-                this.isArrowDown = false;
-
-            else if (e.code === 'ArrowLeft')
-                this.isArrowLeft = false;
-
-            else if (e.code === 'ArrowRight')
-                this.isArrowRight = false;
-
-            else if (e.code === 'Space') 
-                this.isSpace = false;
-
-        }
+        document.onkeyup = (e) => { this.setKeyEvent(e, false); }
 
         this.modeIndeces = {
             MassSpring: 0,
@@ -130,7 +92,7 @@ export class App {
             restart: () => { this.restart() },
             mode: this.currentModeIndex,
             showControlHairs: false,
-            applyPhysics: false,
+            applyPhysics: true,
         };
 
         let gui = new GUI().title('Evaluate Dataset Options');
@@ -169,6 +131,29 @@ export class App {
         this.animate();
     };
 
+    setKeyEvent(e, bool){
+        if (e.code === 'KeyW')
+        this.isKeyW = bool;
+
+        else if (e.code === 'KeyS')
+            this.isKeyS = bool;
+
+        else if (e.code === 'KeyA')
+            this.isKeyA = bool;
+
+        else if (e.code === 'KeyD')
+            this.isKeyD = bool;
+        
+        else if(e.code === 'KeyQ')
+            this.isKeyQ = bool;
+        
+        else if(e.code === 'KeyE')
+            this.isKeyE = bool;
+        
+        else if (e.code === 'Space') 
+            this.isSpace = bool;
+
+    }
 
     onClick = (event) => {
         // calculate normalized mouse coordinates (-1 to +1)
@@ -517,23 +502,30 @@ export class App {
             return;
             
         let tt = delta * 0.2;
-        if (this.isArrowUp) {
+        if (this.isKeyQ) {
             let position = model.skull.position;
             model.moveSkull(position.x, position.y + tt, position.z); 
         }
-        if (this.isArrowDown) {
+        if (this.isKeyE) {
             let position = model.skull.position;
             model.moveSkull(position.x, position.y - tt, position.z);
         }
-        if (this.isArrowLeft) {
+        if (this.isKeyA) {
             let position = model.skull.position;
             model.moveSkull(position.x - tt, position.y, position.z);
         }
-        if (this.isArrowRight) {
+        if (this.isKeyD) {
             let position = model.skull.position;
             model.moveSkull(position.x + tt, position.y, position.z);
         }
-        
+        if (this.isKeyS) {
+            let position = model.skull.position;
+            model.moveSkull(position.x, position.y, position.z + tt);
+        }
+        if (this.isKeyW) {
+            let position = model.skull.position;
+            model.moveSkull(position.x, position.y, position.z - tt);
+        }
         if (this.isSpace) {
             model.rotateSkull(delta*1.5);
         }
@@ -544,19 +536,19 @@ export class App {
         let model = this.currentModeIndex == this.modeIndeces.Plane ? this.modes[this.modeIndeces.Plane] : null ;
 
         let tt = delta * 0.2;
-        if (this.isArrowUp) {
+        if (this.isKeyW) {
             let position = model.system.particles[0].position;
             model.setPosition(position[0], position[1] + tt, position[2]); 
         }
-        if (this.isArrowDown) {
+        if (this.isKeyS) {
             let position = model.system.particles[0].position;
             model.setPosition(position[0], position[1] - tt, position[2]);
         }
-        if (this.isArrowLeft) {
+        if (this.isKeyA) {
             let position = model.system.particles[0].position;
             model.setPosition(position[0] - tt, position[1], position[2]);
         }
-        if (this.isArrowRight) {
+        if (this.isKeyD) {
             let position = model.system.particles[0].position;
             model.setPosition(position[0] + tt, position[1], position[2]);
         }
