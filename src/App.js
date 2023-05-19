@@ -61,8 +61,27 @@ export class App {
         dirLight.castShadow = false;
         this.scene.add(dirLight);
 
-
         this.mousePos = new THREE.Vector2();
+
+        // Add text information
+        let info = document.createElement('div');
+        info.innerHTML = "Use w,a,s,d,q,e keys to move";
+        let info2 = document.createElement('div');
+        info2.innerHTML = "Use space bar to rotate";
+        this.info3 = document.createElement('div');
+
+        info.style.fontFamily = info2.style.fontFamily = this.info3.style.fontFamily = "sans-serif";
+        info.style.color = info2.style.color = this.info3.style.color = "white";
+        info.style.position = info2.style.position = this.info3.style.position = 'absolute';
+        info.style.top = 30 + 'px';
+        info.style.left = info2.style.left = this.info3.style.left = 40 + 'px';
+        info2.style.top = 55 + 'px';
+        this.info3.style.top = 75 + 'px';
+        info2.style.fontSize = this.info3.style.fontSize = "small";
+
+        document.body.appendChild(info);
+        document.body.appendChild(info2);
+        document.body.appendChild(this.info3);
 
         // Set listeners and events
         window.addEventListener('resize', this.onWindowResize.bind(this));
@@ -107,11 +126,11 @@ export class App {
         gui.add(this.options, 'set').name('Set params');
         gui.add(this.options, 'restart').name('Restart demo');
 
-        gui.onChange( event => {
-            if(event.property === 'showControlHairs'){
+        gui.onChange(event => {
+            if (event.property === 'showControlHairs') {
                 if (this.currentModeIndex == this.modeIndeces.MassSpring)
                     return;
-                
+
                 this.modes[this.currentModeIndex].showControlHairs(event.value);
             }
         })
@@ -131,9 +150,9 @@ export class App {
         this.animate();
     };
 
-    setKeyEvent(e, bool){
+    setKeyEvent(e, bool) {
         if (e.code === 'KeyW')
-        this.isKeyW = bool;
+            this.isKeyW = bool;
 
         else if (e.code === 'KeyS')
             this.isKeyS = bool;
@@ -143,14 +162,14 @@ export class App {
 
         else if (e.code === 'KeyD')
             this.isKeyD = bool;
-        
-        else if(e.code === 'KeyQ')
+
+        else if (e.code === 'KeyQ')
             this.isKeyQ = bool;
-        
-        else if(e.code === 'KeyE')
+
+        else if (e.code === 'KeyE')
             this.isKeyE = bool;
-        
-        else if (e.code === 'Space') 
+
+        else if (e.code === 'Space')
             this.isSpace = bool;
 
     }
@@ -231,7 +250,7 @@ export class App {
 
             //else if (this.options.mode == this.modeIndeces.Skull || this.options.mode == this.modeIndeces.Head) {
             else if (this.options.mode == this.modeIndeces.Head) {
-                
+
                 //let model = this.options.mode == this.modeIndeces.Skull ? this.modes[this.modeIndeces.Skull] : this.modes[this.modeIndeces.Head];
                 let model = this.modes[this.modeIndeces.Head];
                 for (let i = 0; i < model.hairCards.length; i++) {
@@ -253,7 +272,7 @@ export class App {
             this.modes[this.modeIndeces.Plane].restart(this.options, new THREE.Vector3(0, 1.5, 0));
         }
 
-        
+
         //else if (this.options.mode == this.modeIndeces.Head) {
         else if (this.options.mode == this.modeIndeces.Skull || this.options.mode == this.modeIndeces.Head) {
             //let model = this.options.mode == this.modeIndeces.Skull ? this.modes[this.modeIndeces.Skull] : this.modes[this.modeIndeces.Head];
@@ -263,7 +282,7 @@ export class App {
 
     };
 
-    
+
 
     /*
     createHairCard() {
@@ -315,7 +334,7 @@ export class App {
     };
 
     initOnlyOnePlaneSytem() {
-                
+
         this.modes[this.modeIndeces.Plane] = new entitySystem(null, null, null);
         this.modes[this.modeIndeces.Plane].initHairSystem(0, new THREE.Vector3(0, 1.5, 0), this.options);
         this.modes[this.modeIndeces.Plane].mesh.rotateX(-1);
@@ -342,7 +361,7 @@ export class App {
 
     }
     */
-   
+
     initHead() {
 
         this.loaderGLB.load('./data/head.glb', (glb) => {
@@ -422,24 +441,23 @@ export class App {
 
         //else if (this.currentModeIndex == this.modeIndeces.Skull || this.currentModeIndex == this.modeIndeces.Head) {
         else if (this.options.mode == this.modeIndeces.Skull || this.options.mode == this.modeIndeces.Head) {
-          
+
             //let model = this.currentModeIndex == this.modeIndeces.Skull ? this.modes[this.modeIndeces.Skull] : this.modes[this.modeIndeces.Head];
             let model = this.modes[this.modeIndeces.Head];
             if (!model)
                 return;
 
-            if(this.options.applyPhysics)
-            {
+            if (this.options.applyPhysics) {
                 model.updateSystem(delta);
                 this.updatePosition(delta);
             }
-            
+
 
         }
 
     };
 
-    
+
 
     updateMode() {
 
@@ -447,8 +465,7 @@ export class App {
         if (this.currentModeIndex == this.modeIndeces.MassSpring)
             this.modes[this.modeIndeces.MassSpring].setVisible(false);
 
-        else if (this.currentModeIndex == this.modeIndeces.Plane)
-        {
+        else if (this.currentModeIndex == this.modeIndeces.Plane) {
             this.modes[this.modeIndeces.Plane].setVisible(false);
             this.modes[this.modeIndeces.Plane].showControlHairs(false);
         }
@@ -461,8 +478,7 @@ export class App {
         }
         */
 
-        else if (this.currentModeIndex == this.modeIndeces.Head)
-        {
+        else if (this.currentModeIndex == this.modeIndeces.Head) {
             this.modes[this.modeIndeces.Head].setVisible(false);
             this.modes[this.modeIndeces.Head].showControlHairs(false);
         }
@@ -472,8 +488,7 @@ export class App {
         if (this.options.mode == this.modeIndeces.MassSpring)
             this.modes[this.modeIndeces.MassSpring].setVisible(true);
 
-        else if (this.options.mode == this.modeIndeces.Plane)
-        {
+        else if (this.options.mode == this.modeIndeces.Plane) {
             this.modes[this.modeIndeces.Plane].setVisible(true);
             this.modes[this.modeIndeces.Plane].showControlHairs(this.options.showControlHairs);
         }
@@ -486,8 +501,7 @@ export class App {
         }
         */
 
-        else if (this.options.mode == this.modeIndeces.Head)
-        {
+        else if (this.options.mode == this.modeIndeces.Head) {
             this.modes[this.modeIndeces.Head].setVisible(true);
             this.modes[this.modeIndeces.Head].showControlHairs(this.options.showControlHairs);
         }
@@ -498,13 +512,13 @@ export class App {
     updatePosition(delta) {  // TODO put it in model?
         //let model = this.currentModeIndex == this.modeIndeces.Skull ? this.modes[this.modeIndeces.Skull] : (this.currentModeIndex == this.modeIndeces.Head ? this.modes[this.modeIndeces.Head] : null) ;
         let model = this.modes[this.currentModeIndex];
-        if(model == null)
+        if (model == null)
             return;
-            
+
         let tt = delta * 0.2;
         if (this.isKeyQ) {
             let position = model.skull.position;
-            model.moveSkull(position.x, position.y + tt, position.z); 
+            model.moveSkull(position.x, position.y + tt, position.z);
         }
         if (this.isKeyE) {
             let position = model.skull.position;
@@ -527,18 +541,18 @@ export class App {
             model.moveSkull(position.x, position.y, position.z - tt);
         }
         if (this.isSpace) {
-            model.rotateSkull(delta*1.5);
+            model.rotateSkull(delta * 1.5);
         }
-        
+
     }
 
-    updatePositionCard(delta) { 
-        let model = this.currentModeIndex == this.modeIndeces.Plane ? this.modes[this.modeIndeces.Plane] : null ;
+    updatePositionCard(delta) {
+        let model = this.currentModeIndex == this.modeIndeces.Plane ? this.modes[this.modeIndeces.Plane] : null;
 
         let tt = delta * 0.2;
         if (this.isKeyW) {
             let position = model.system.particles[0].position;
-            model.setPosition(position[0], position[1] + tt, position[2]); 
+            model.setPosition(position[0], position[1] + tt, position[2]);
         }
         if (this.isKeyS) {
             let position = model.system.particles[0].position;
@@ -552,7 +566,7 @@ export class App {
             let position = model.system.particles[0].position;
             model.setPosition(position[0] + tt, position[1], position[2]);
         }
-        
+
         if (this.isSpace) {
             this.modes[this.modeIndeces.Plane].rotateCard(delta);
         }
