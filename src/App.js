@@ -111,7 +111,7 @@ export class App {
             restart: () => { this.restart() },
             mode: this.currentModeIndex,
             showControlHairs: false,
-            applyPhysics: false,
+            applyPhysics: true,
         };
 
         let gui = new GUI().title('Evaluate Dataset Options');
