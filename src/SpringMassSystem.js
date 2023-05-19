@@ -323,9 +323,9 @@ export class MultipleSpringMassSystem {
 }
 
 function Particle(p, v, i, o, m = 20){
-    this.position = [...p];
+    this.position = [...p];     //world position
     this.velocity = [...v];
-    this.offset = [...o];
+    this.offset = [...o];       // local offset
     this.index = i;
     this.mass = m ;
 }
@@ -349,7 +349,7 @@ export class ParticleSystemFromCard {
     lines = [];
 
 
-    constructor(position, {damping, k, gravity, mass}) {
+    constructor(position, localOffsets, {damping, k, gravity, mass}) {
 
         this.mass = mass;
         this.damping = damping;
@@ -361,13 +361,15 @@ export class ParticleSystemFromCard {
             let velocity = [0,0,0]
             let pos = [position[i].x, position[i].y, position[i].z];
 
+            
             var offset = [0,0,0]
 
             offset[0] = position[i+1].x - pos[0];
             offset[1] = position[i+1].y - pos[1];
             offset[2] = position[i+1].z - pos[2];
-
-            var p = new Particle([pos[0] + offset[0]/2, pos[1] + offset[1]/2, pos[2] + offset[2]/2 ], velocity, i, offset);
+            
+            let localOffset = localOffsets[i/2];
+            var p = new Particle([pos[0] + offset[0]/2, pos[1] + offset[1]/2, pos[2] + offset[2]/2 ], velocity, i, localOffset);
             this.particles.push(p)
 
             //add lines to show control hairs

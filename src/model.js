@@ -40,6 +40,7 @@ export class entitySystem {
     loadParticleSystemFromCard = (mesh, options) => {
         let position = mesh.geometry.getAttribute('position')
         let initWPos = [];
+        let localOffsets = [];
         // change to world position
         for (let i = 0; i < position.count; i++) {
             let vertex = new THREE.Vector3();
@@ -47,7 +48,24 @@ export class entitySystem {
             initWPos.push(mesh.localToWorld(vertex));
         }
 
-        return { system: new ParticleSystemFromCard(initWPos, options), initWPos: initWPos };
+        for(let i = 0; i < position.count; i+=2)
+        {
+            let vertex = new THREE.Vector3();
+            vertex.fromBufferAttribute(position, i);
+
+            let vertex2 = new THREE.Vector3();
+            vertex2.fromBufferAttribute(position, i + 1);
+
+            var offset = [0,0,0]
+
+            offset[0] = vertex2.x - vertex.x;
+            offset[1] = vertex2.y - vertex.y;
+            offset[2] = vertex2.z - vertex.z;
+
+            localOffsets.push(offset);
+        }
+
+        return { system: new ParticleSystemFromCard(initWPos, localOffsets, options), initWPos: initWPos };
     }
 
     initHairSystem = (index, worldPos, options, worldNorm = null) => {
@@ -99,10 +117,7 @@ export class entitySystem {
             plane.position.set(worldPos.x, worldPos.y - plane.geometry.height / 2, worldPos.z);
         }
 
-
-
         plane.updateMatrixWorld();
-
 
         let { system, initWPos } = this.loadParticleSystemFromCard(plane, options);
         system.setAnchor([worldPos.x, worldPos.y, worldPos.z]);
@@ -149,14 +164,14 @@ export class entitySystem {
             const particle = this.system.particles[i];
 
             const vertexIndex = particle.index;
-            let aux1 = new THREE.Vector3(particle.position[0] - particle.offset[0] / 2, particle.position[1] - particle.offset[1] / 2, particle.position[2] - particle.offset[2] / 2);
+            let aux1 = new THREE.Vector3(particle.position[0], particle.position[1], particle.position[2]);
             let lPos1 = this.mesh.worldToLocal(aux1);
             
-            let aux2 = new THREE.Vector3(particle.position[0] + particle.offset[0] / 2, particle.position[1] + particle.offset[1] / 2, particle.position[2] + particle.offset[2] / 2);
+            let aux2 = new THREE.Vector3(particle.position[0], particle.position[1], particle.position[2]);
             let lPos2 = this.mesh.worldToLocal(aux2);
 
-            position.setXYZ(vertexIndex, lPos1.x , lPos1.y , lPos1.z );
-            position.setXYZ(vertexIndex + 1, lPos2.x , lPos2.y, lPos2.z);
+            position.setXYZ(vertexIndex, lPos1.x - particle.offset[0] / 2, lPos1.y - particle.offset[1] / 2, lPos1.z - particle.offset[2] / 2);
+            position.setXYZ(vertexIndex + 1, lPos2.x + particle.offset[0] / 2, lPos2.y + particle.offset[1] / 2, lPos2.z + particle.offset[2] / 2);
             position.needsUpdate = true;
 
         }
