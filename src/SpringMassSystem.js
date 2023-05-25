@@ -5,6 +5,8 @@ var gravity = -9.81;
 var k = 800;
 var damping = 100;
 
+let particlesRadius = 0.001;
+
 function createParticle(color = 'purple') {
     const radius = 0.01;
     const widthSegments = 16;
@@ -42,7 +44,7 @@ function createLine() {
     //THREE.line.geometry.vertices.push(new THREE.Vector3(0,0,0));
     //THREE.line.geometry.vertices.push(new THREE.Vector3(0,0,0));
 
-    const material = new THREE.LineBasicMaterial({ color: 'grey' });
+    const material = new THREE.LineBasicMaterial({ side: THREE.DoubleSide, color: 'grey' });
     
     const points = [];
     points.push( new THREE.Vector3( 0, 1, 0 ) );
@@ -51,6 +53,7 @@ function createLine() {
     const geometry = new THREE.BufferGeometry().setFromPoints( points );
     
     const line = new THREE.Line( geometry, material );
+    line.frustrumCulled = false;
     
     return line;
 }
@@ -141,6 +144,8 @@ export class SpringMassSystem2D {
         let end = this.particle.position;
 
         this.line.geometry.setFromPoints([start, end]);
+        this.line.frustrumCulled = false;
+
 
     }
 }
@@ -265,6 +270,8 @@ export class MultipleSpringMassSystem {
 
             // Update line           
             this.lines[j].geometry.setFromPoints([this.particles[j].position, endPos]);
+            this.lines[j].geometry.computeBoundingSphere();
+
         }
 
     }
@@ -348,6 +355,7 @@ export class ParticleSystemFromCard {
 
     lines = [];
 
+    collisionSpheres = null;
 
     constructor(position, localOffsets, {damping, k, gravity, mass}) {
 
@@ -436,21 +444,49 @@ export class ParticleSystemFromCard {
             velocity1[1] = velocity1[1] + acceleration[1] * delta;
             velocity1[2] = velocity1[2] + acceleration[2] * delta;
 
+            let newPos = [position1[0] + velocity1[0] * delta, position1[1] + velocity1[1] * delta, position1[2] + velocity1[2] * delta]
+
+            if(!this.checkCollision(newPos))
+            {
+                 // update particle position and velocity
+                this.particles[j].position[0] = newPos[0];
+                this.particles[j].position[1] = newPos[1];
+                this.particles[j].position[2] = newPos[2];
+
+                this.particles[j].velocity[0] = velocity1[0];
+                this.particles[j].velocity[1] = velocity1[1];
+                this.particles[j].velocity[2] = velocity1[2];
+
+                
+                // Update line
+                let start = new THREE.Vector3(this.particles[j].position[0], this.particles[j].position[1], this.particles[j].position[2]);
+                let end = new THREE.Vector3(endPos[0], endPos[1], endPos[2]);
+                this.lines[j - 1].geometry.setFromPoints([start, end]);
+            }
     
-            // update particle position and velocity
-            this.particles[j].position[0] = position1[0] + velocity1[0] * delta;
-            this.particles[j].position[1] = position1[1] + velocity1[1] * delta;
-            this.particles[j].position[2] = position1[2] + velocity1[2] * delta;
+           
+        }
+    }
 
-            this.particles[j].velocity[0] = velocity1[0];
-            this.particles[j].velocity[1] = velocity1[1];
-            this.particles[j].velocity[2] = velocity1[2];
+    checkCollision(position){
+        if(!this.collisionSpheres)
+            return false;
 
+        for(let i = 0; i < this.collisionSpheres.length; i++)
+        {
+            let cs = this.collisionSpheres[i];
+            let vec = [position[0] - cs.center[0], position[1] - cs.center[1], position[2] - cs.center[2]]
+            let modulusSquared = vec[0]*vec[0] + vec[1]*vec[1] + vec[2]*vec[2];
+
+            let difSquared = (cs.radius + particlesRadius) * (cs.radius + particlesRadius);
             
-            // Update line
-            let start = new THREE.Vector3(this.particles[j].position[0], this.particles[j].position[1], this.particles[j].position[2]);
-            let end = new THREE.Vector3(endPos[0], endPos[1], endPos[2]);
-            this.lines[j - 1].geometry.setFromPoints([start, end]);
+            if((modulusSquared - difSquared) < 0)  //there is collision
+            {
+                console.log("collison!!!!!!!!!!!!!")
+                return true;
+            }
+            //sdconsole.log("NOOOOOOOOOO collison!!!!!!!!!!!!!")
+            return false;
         }
     }
 

@@ -43,7 +43,7 @@ export class App {
 
         // Set up camera
         this.camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.01, 100);
-        this.camera.position.set(0, 3, 6);
+        this.camera.position.set(0, 1.5, 1);
 
         this.controls = new OrbitControls(this.camera, canvas);
         this.controls.minDistance = 0.1;
@@ -111,7 +111,8 @@ export class App {
             restart: () => { this.restart() },
             mode: this.currentModeIndex,
             showControlHairs: false,
-            applyPhysics: true,
+            showCollisionSpheres: true,
+            applyPhysics: false,
         };
 
         let gui = new GUI().title('Evaluate Dataset Options');
@@ -121,6 +122,7 @@ export class App {
         gui.add(this.options, 'gravity', -100, 0).name('Gravity');
         gui.add(this.options, 'mass', 0, 100).name('Mass');
         gui.add(this.options, 'showControlHairs').name('Show Control Hairs');
+        gui.add(this.options, 'showCollisionSpheres').name('Show Collision Spheres');        
         gui.add(this.options, 'applyPhysics').name('Apply Physics');
 
         gui.add(this.options, 'set').name('Set params');
@@ -132,6 +134,13 @@ export class App {
                     return;
 
                 this.modes[this.currentModeIndex].showControlHairs(event.value);
+            }
+
+            if (event.property === 'showCollisionSpheres') {
+                if (this.currentModeIndex != this.modeIndeces.Head)
+                    return;
+
+                this.modes[this.currentModeIndex].showCollisionSpheres(event.value);
             }
         })
 
@@ -276,7 +285,7 @@ export class App {
         //else if (this.options.mode == this.modeIndeces.Head) {
         else if (this.options.mode == this.modeIndeces.Skull || this.options.mode == this.modeIndeces.Head) {
             //let model = this.options.mode == this.modeIndeces.Skull ? this.modes[this.modeIndeces.Skull] : this.modes[this.modeIndeces.Head];
-            this.modes[this.modeIndeces.Head].model.restart(this.options);
+            this.modes[this.modeIndeces.Head].restart(this.options);
         }
 
 
@@ -386,10 +395,19 @@ export class App {
             let indeces = [1500, 1510, 662, 1544, 631];
             let pos = [0, 0, 0];
             this.modes[this.modeIndeces.Head] = new skullSystem(head, indeces, this.options, pos);
+
+            let radius = [0.082, 0.045];
+            let posSphere = [[0,1.585,0.01], [0,1.47, 0]];
+
+            for(let i = 0; i < radius.length; i++)
+                this.modes[this.modeIndeces.Head].addCollisionsSphere(posSphere[i], radius[i])
+
             this.modes[this.modeIndeces.Head].addToScene(this.scene);
             this.modes[this.modeIndeces.Head].setVisible(this.currentModeIndex == this.modeIndeces.Head);
             this.modes[this.modeIndeces.Head].showControlHairs(this.options.showControlHairs);
+            this.modes[this.modeIndeces.Head].showCollisionSpheres(this.options.showCollisionSpheres);
 
+            
         });
     }
 
@@ -517,28 +535,22 @@ export class App {
 
         let tt = delta * 0.2;
         if (this.isKeyQ) {
-            let position = model.skull.position;
-            model.moveSkull(position.x, position.y + tt, position.z);
+            model.moveSkull(0, tt, 0);
         }
         if (this.isKeyE) {
-            let position = model.skull.position;
-            model.moveSkull(position.x, position.y - tt, position.z);
+            model.moveSkull(0, - tt, 0);
         }
         if (this.isKeyA) {
-            let position = model.skull.position;
-            model.moveSkull(position.x - tt, position.y, position.z);
+            model.moveSkull(- tt, 0, 0);
         }
         if (this.isKeyD) {
-            let position = model.skull.position;
-            model.moveSkull(position.x + tt, position.y, position.z);
+            model.moveSkull( tt, 0, 0);
         }
         if (this.isKeyS) {
-            let position = model.skull.position;
-            model.moveSkull(position.x, position.y, position.z + tt);
+            model.moveSkull(0, 0, tt);
         }
         if (this.isKeyW) {
-            let position = model.skull.position;
-            model.moveSkull(position.x, position.y, position.z - tt);
+            model.moveSkull(0, 0, - tt);
         }
         if (this.isSpace) {
             model.rotateSkull(delta * 1.5);

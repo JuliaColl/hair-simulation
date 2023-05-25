@@ -68,7 +68,7 @@ export class entitySystem {
         return { system: new ParticleSystemFromCard(initWPos, localOffsets, options), initWPos: initWPos };
     }
 
-    initHairSystem = (index, worldPos, options, worldNorm = null) => {
+    initHairSystem = (index, worldPos, options, worldNorm = null, collisionSpheres = null ) => {
         let plane = this.createHairCard();
         plane.position.set(worldPos.x, worldPos.y , worldPos.z);
         plane.updateMatrixWorld();
@@ -121,7 +121,8 @@ export class entitySystem {
 
         let { system, initWPos } = this.loadParticleSystemFromCard(plane, options);
         system.setAnchor([worldPos.x, worldPos.y, worldPos.z]);
-    
+        system.collisionSpheres = collisionSpheres;    // TODO: idk if this is optimal
+
         this.mesh = plane;
         this.system = system;
         this.initWPos = initWPos;
@@ -148,8 +149,8 @@ export class entitySystem {
         let cardMesh = new THREE.Mesh(cardGeometry, cardMaterial);
         cardMesh.frustumCulled = false;
         cardMaterial.transparent = true;
-        //cardMaterial.blending = THREE.NormalBlending; // Example value
-        //cardMaterial.depthTest = false; // Example value
+        //cardMaterial.blending = THREE.NormalBlending; 
+        //cardMaterial.depthTest = false; 
 
         return cardMesh;
     }
@@ -189,11 +190,38 @@ export class entitySystem {
     }
 }
 
+class collisionSphere {
+    mesh = null;
+    center;     //center position vec3
+    radius;
+
+    constructor(center = [0,0,0], radius = 1.0){
+        this.center = [...center]
+        this.radius = radius;
+
+        let geometry = new THREE.SphereGeometry( radius, 32, 16 ); 
+        let material = new THREE.MeshBasicMaterial( { color: 0xffff00 } ); 
+        this.mesh = new THREE.Mesh( geometry, material ); 
+
+        this.mesh.position.set(center[0], center[1], center[2]);
+        this.mesh.updateMatrixWorld();
+    }
+
+    addToScene(scene){
+        scene.add(this.mesh);
+    }
+
+    setVisible(bool){
+        this.mesh.visible = bool;
+    }
+}
+
 
 export class skullSystem {
     skull = null;
     hairCards = [];
     initPosition = [];
+    collisionSpheres = [];
 
     constructor(headMesh, indeces, options, wPos = [0, 0, 0]) {
         this.skull = headMesh;    //mesh of the head
@@ -223,9 +251,13 @@ export class skullSystem {
             let worldNorm = this.skull.localToWorld(normal);
 
             let hairCard = new entitySystem(null, null, null);
-            hairCard.initHairSystem(index, worldPos, options, worldNorm);
+            hairCard.initHairSystem(index, worldPos, options, worldNorm, this.collisionSpheres);
             this.hairCards.push(hairCard);
         }
+    }
+
+    addCollisionsSphere = (position, radius) => {
+        this.collisionSpheres.push(new collisionSphere(position, radius));
     }
    
 
@@ -234,6 +266,11 @@ export class skullSystem {
         for (let i = 0; i < this.hairCards.length; i++) {
             this.hairCards[i].addToScene(scene);
         }
+
+        for(let i = 0; i < this.collisionSpheres.length; i++) {
+            this.collisionSpheres[i].addToScene(scene);
+        }
+
     }
 
     updateHairCardsPos = () => {
@@ -271,11 +308,25 @@ export class skullSystem {
         }
     };
 
-    moveSkull = (x, y, z) => {
-        this.skull.position.set(x, y, z);
+    moveSkull = (dx, dy, dz) => {
+        let position = this.skull.position;
+
+        this.skull.position.set(position.x + dx, position.y + dy, position.z + dz);
         this.skull.updateMatrixWorld();
 
+        this.moveCollisionSpheres(dx, dy, dz);
         this.updateHairCardsPos();
+    }
+
+    moveCollisionSpheres = (dx,dy,dz) => {
+        for (let i = 0; i < this.collisionSpheres.length; i++){
+            this.collisionSpheres[i].center[0] += dx;
+            this.collisionSpheres[i].center[1] += dy;
+            this.collisionSpheres[i].center[2] += dz;
+
+            this.collisionSpheres[i].mesh.position.set(this.collisionSpheres[i].center[0],this.collisionSpheres[i].center[1],this.collisionSpheres[i].center[2]);
+            this.collisionSpheres[i].mesh.updateMatrixWorld();
+        }
     }
 
     rotateSkull = (rad) => {
@@ -305,6 +356,12 @@ export class skullSystem {
     showControlHairs = (bool) => {
         for (let i = 0; i < this.hairCards.length; i++) {
             this.hairCards[i].showControlHairs(bool);
+        }
+    }
+
+    showCollisionSpheres = (bool) => {
+        for (let i = 0; i < this.collisionSpheres.length; i++) {
+            this.collisionSpheres[i].setVisible(bool);
         }
     }
 }
