@@ -17,9 +17,7 @@ export class entitySystem {
     }
 
     setPosition = (x, y, z) => {
-        //this.mesh.position.set(x, y, z);
-        //this.mesh.updateMatrixWorld();
-        this.system.setAnchor([x, y, z]);
+            this.system.setAnchor([x, y, z]);
     };
 
     setVisible = (bool) => {
@@ -190,7 +188,7 @@ export class entitySystem {
     }
 }
 
-class collisionSphere {
+export class CollisionSphere {
     mesh = null;
     center;     //center position vec3
     radius;
@@ -257,7 +255,7 @@ export class skullSystem {
     }
 
     addCollisionsSphere = (position, radius) => {
-        this.collisionSpheres.push(new collisionSphere(position, radius));
+        this.collisionSpheres.push(new CollisionSphere(position, radius));
     }
    
 

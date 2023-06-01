@@ -6,6 +6,24 @@ var k = 800;
 var damping = 100;
 
 let particlesRadius = 0.001;
+let strength = 100;
+let c = 70;
+
+
+function lengthVec3(v){
+    return Math.sqrt(v[0]*v[0] + v[1]*v[1] + v[2]*v[2]);
+}
+
+function normalizeVec3(v){
+    let length = lengthVec3(v);
+    v[0] /= length;
+    v[1] /= length;
+    v[2] /= length;
+}
+
+function scalarPorductVec3( v, u){
+    return v[0]*u[0] + v[1]*u[1] + v[2]*u[2];
+}
 
 function createParticle(color = 'purple') {
     const radius = 0.01;
@@ -444,50 +462,141 @@ export class ParticleSystemFromCard {
             velocity1[1] = velocity1[1] + acceleration[1] * delta;
             velocity1[2] = velocity1[2] + acceleration[2] * delta;
 
-            let newPos = [position1[0] + velocity1[0] * delta, position1[1] + velocity1[1] * delta, position1[2] + velocity1[2] * delta]
 
-            if(!this.checkCollision(newPos))
-            {
-                 // update particle position and velocity
-                this.particles[j].position[0] = newPos[0];
-                this.particles[j].position[1] = newPos[1];
-                this.particles[j].position[2] = newPos[2];
+            let {position, velocity} = this.checkCollision1(position1, velocity1, delta);
+            //let {position, velocity} = this.checkCollision2(position1, velocity1, delta, force);
 
-                this.particles[j].velocity[0] = velocity1[0];
-                this.particles[j].velocity[1] = velocity1[1];
-                this.particles[j].velocity[2] = velocity1[2];
+            // update particle position and velocity
+            this.particles[j].position[0] = position[0];
+            this.particles[j].position[1] = position[1];
+            this.particles[j].position[2] = position[2];
 
-                
-                // Update line
-                let start = new THREE.Vector3(this.particles[j].position[0], this.particles[j].position[1], this.particles[j].position[2]);
-                let end = new THREE.Vector3(endPos[0], endPos[1], endPos[2]);
-                this.lines[j - 1].geometry.setFromPoints([start, end]);
-            }
-    
+            this.particles[j].velocity[0] = velocity[0];
+            this.particles[j].velocity[1] = velocity[1];
+            this.particles[j].velocity[2] = velocity[2];
+
+              
+            // Update line
+            let start = new THREE.Vector3(this.particles[j].position[0], this.particles[j].position[1], this.particles[j].position[2]);
+            let end = new THREE.Vector3(endPos[0], endPos[1], endPos[2]);
+            this.lines[j - 1].geometry.setFromPoints([start, end]);
            
         }
     }
+     /*
+        source: https://www.martinruenz.de/media/pubs/ruenz12bachelor.pdf
+     */
 
-    checkCollision(position){
+    checkCollision1(position, velocity, delta){
+        let newPos = [position[0] + velocity[0] * delta, position[1] + velocity[1] * delta, position[2] + velocity[2] * delta]
+ 
         if(!this.collisionSpheres)
-            return false;
+            return {position: newPos, velocity: velocity};
+
 
         for(let i = 0; i < this.collisionSpheres.length; i++)
         {
             let cs = this.collisionSpheres[i];
-            let vec = [position[0] - cs.center[0], position[1] - cs.center[1], position[2] - cs.center[2]]
+            let vec = [newPos[0] - cs.center[0], newPos[1] - cs.center[1], newPos[2] - cs.center[2]]
             let modulusSquared = vec[0]*vec[0] + vec[1]*vec[1] + vec[2]*vec[2];
 
             let difSquared = (cs.radius + particlesRadius) * (cs.radius + particlesRadius);
             
             if((modulusSquared - difSquared) < 0)  //there is collision
             {
-                console.log("collison!!!!!!!!!!!!!")
-                return true;
+                let modulus = Math.sqrt(modulusSquared);
+                let finalPos = [0,0,0];
+                //finalPos[0] = ((cs.radius + particlesRadius) * (newPos[0] - cs.center[0]) / modulus) ;
+                //finalPos[1] = ((cs.radius + particlesRadius) * (newPos[1] - cs.center[1]) / modulus) ;
+                //finalPos[2] = ((cs.radius + particlesRadius) * (newPos[2] - cs.center[2]) / modulus) ;
+
+                let w = [newPos[0] - cs.center[0], newPos[1] - cs.center[1], newPos[2] - cs.center[2] ]
+                let sum_radius = (cs.radius + particlesRadius);
+
+                let A = velocity[0] * velocity[0] + velocity[1] * velocity[1] + velocity[2] * velocity[2];
+                let B = 2 * velocity[0]*w[0] + 2 * velocity[1]*w[1] + 2 * velocity[2]*w[2];
+                let C = - sum_radius * sum_radius + w[0] * w[0] + w[1] * w[1] + w[2] * w[2];
+
+                let sqrt = Math.sqrt(B*B - 4 * A * C);
+                let s = (-B + sqrt) / (2 * A);
+
+                if (s > 0)
+                    s =  (-B - sqrt) / (2 * A);
+
+                finalPos[0] = s * velocity[0] + newPos[0];
+                finalPos[1] = s * velocity[1] + newPos[1];
+                finalPos[2] = s * velocity[2] + newPos[2];
+                
+                //TODO: update velocity somehow :)
+                let finalVel = [0,0,0];
+               
+
+                return {position: finalPos, velocity: [0,0,0]};
             }
-            //sdconsole.log("NOOOOOOOOOO collison!!!!!!!!!!!!!")
-            return false;
         }
+
+        return {position: newPos, velocity: velocity};
+
+    }
+
+    /*
+    Scource: https://www.researchgate.net/profile/Zhiyong-Huang-5/publication/4038534_An_enhanced_framework_for_real-time_hair_animation/links/0c96052312d31cd3f8000000/An-enhanced-framework-for-real-time-hair-animation.pdf
+    reaction constraint method: https://dl.acm.org/doi/pdf/10.1145/54852.378524
+    */
+
+    checkCollision2(position, velocity, delta, force){
+        let newPos = [position[0] + velocity[0] * delta, position[1] + velocity[1] * delta, position[2] + velocity[2] * delta]
+ 
+        if(!this.collisionSpheres)
+            return {position: newPos, velocity: velocity};
+
+        for(let i = 0; i < this.collisionSpheres.length; i++)
+        {
+            let cs = this.collisionSpheres[i];
+            let N = [newPos[0] - cs.center[0], newPos[1] - cs.center[1], newPos[2] - cs.center[2]]
+            let distanceSquare = N[0]*N[0] + N[1]*N[1] + N[2]*N[2];
+
+            let radiusSquare = cs.radius * cs.radius;
+            
+            if (distanceSquare < radiusSquare)  //there is collision
+            {
+                normalizeVec3(N);
+                let scalarFN = scalarPorductVec3(N, force);
+                let scalarVN = scalarPorductVec3(N, velocity);
+
+                let T = [0,0,0];
+                let unconstrainedForce;
+                let constrainedForce;
+                let outputF = [0,0,0];
+
+                for(let i = 0; i < 3; i++ )
+                {
+                    T[i] = cs.center[i] + cs.radius * N[i]; 
+                    unconstrainedForce = force[i] - scalarFN*N[i];
+                    constrainedForce = - (strength * newPos[i]*T[i] + c*scalarVN ) * N[i];
+                    outputF[i] = unconstrainedForce + constrainedForce;
+                }
+
+
+                var acceleration = [outputF[0] / this.mass, outputF[1] / this.mass, outputF[2] / this.mass];
+                velocity[0] = velocity[0] + acceleration[0] * delta;
+                velocity[1] = velocity[1] + acceleration[1] * delta;
+                velocity[2] = velocity[2] + acceleration[2] * delta;
+
+                velocity[0] = velocity[0] -  scalarVN * N[0];
+                velocity[1] = velocity[1] -  scalarVN * N[1];
+                velocity[2] = velocity[2] -  scalarVN * N[2];
+
+                let finalPos = [newPos[0] + velocity[0] * delta, newPos[1] + velocity[1] * delta, newPos[2] + velocity[2] * delta]
+                //let finalPos = [position[0] + velocity[0] * delta, position[1] + velocity[1] * delta, position[2] + velocity[2] * delta]
+
+                return {position: finalPos, velocity: velocity};
+
+            }
+        }
+
+        return {position: newPos, velocity: velocity};
+
     }
 
     showLines( bool ){

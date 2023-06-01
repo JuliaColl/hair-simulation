@@ -4,7 +4,7 @@ import { GLTFLoader } from 'https://cdn.skypack.dev/three@0.136/examples/jsm/loa
 import { GUI } from 'https://cdn.skypack.dev/lil-gui';
 
 import { SpringMassSystem1D, SpringMassSystem2D, MultipleSpringMassSystem, ParticleSystemFromCard } from './SpringMassSystem.js';
-import { skullSystem, entitySystem } from './model.js'
+import { skullSystem, entitySystem, CollisionSphere } from './model.js'
 
 export class App {
 
@@ -137,10 +137,18 @@ export class App {
             }
 
             if (event.property === 'showCollisionSpheres') {
-                if (this.currentModeIndex != this.modeIndeces.Head)
-                    return;
+                if (this.currentModeIndex == this.modeIndeces.Head)
+                    this.modes[this.currentModeIndex].showCollisionSpheres(event.value);
+                
+                else if (this.currentModeIndex == this.modeIndeces.Plane)
+                {
+                    let spheres = this.modes[this.modeIndeces.Plane].system.collisionSpheres;
 
-                this.modes[this.currentModeIndex].showCollisionSpheres(event.value);
+                    for (let i = 0; i < spheres.length; i++)
+                        spheres[i].setVisible(event.value);
+
+                }
+
             }
         })
 
@@ -344,32 +352,18 @@ export class App {
 
     initOnlyOnePlaneSytem() {
 
+        let collision = new CollisionSphere([0, 1.4, 0.2], 0.05);
+        collision.mesh.visible = false;
         this.modes[this.modeIndeces.Plane] = new entitySystem(null, null, null);
-        this.modes[this.modeIndeces.Plane].initHairSystem(0, new THREE.Vector3(0, 1.5, 0), this.options);
+        this.modes[this.modeIndeces.Plane].initHairSystem(0, new THREE.Vector3(0, 1.5, 0), this.options, null, [collision]);
         this.modes[this.modeIndeces.Plane].mesh.rotateX(-1);
         this.modes[this.modeIndeces.Plane].mesh.updateMatrixWorld();
 
+        this.scene.add(collision.mesh);
         this.modes[this.modeIndeces.Plane].addToScene(this.scene);
         this.modes[this.modeIndeces.Plane].setVisible(this.currentModeIndex == this.modeIndeces.Plane);
         this.modes[this.modeIndeces.Plane].showControlHairs(this.options.showControlHairs);
     };
-
-
-    /*
-    initSkullSystem() {
-        const geometry = new THREE.SphereGeometry(0.1, 32, 16);
-        const material = new THREE.PointsMaterial({ size: 0.01, color: 'purple' });
-        const sphere = new THREE.Points(geometry, material);
-
-        let indeces = [200, 210, 220, 230, 240, 250, 260, 270, 280];
-        this.modes[this.modeIndeces.Skull] = new skullSystem(sphere, indeces, this.options, [0, 1.3, 0]);
-
-        this.modes[this.modeIndeces.Skull].addToScene(this.scene);
-        this.modes[this.modeIndeces.Skull].setVisible(this.currentModeIndex == this.modeIndeces.Skull);
-        this.modes[this.modeIndeces.Skull].showControlHairs(this.options.showControlHairs);
-
-    }
-    */
 
     initHead() {
 
@@ -486,19 +480,16 @@ export class App {
         else if (this.currentModeIndex == this.modeIndeces.Plane) {
             this.modes[this.modeIndeces.Plane].setVisible(false);
             this.modes[this.modeIndeces.Plane].showControlHairs(false);
-        }
+            let spheres = this.modes[this.modeIndeces.Plane].system.collisionSpheres;
+            for (let i = 0; i < spheres.length; i++)
+                spheres[i].setVisible(false);
 
-        /*
-        else if (this.currentModeIndex == this.modeIndeces.Skull)
-        {
-            this.modes[this.modeIndeces.Skull].setVisible(false);
-            this.modes[this.modeIndeces.Skull].showControlHairs(false);
         }
-        */
 
         else if (this.currentModeIndex == this.modeIndeces.Head) {
             this.modes[this.modeIndeces.Head].setVisible(false);
             this.modes[this.modeIndeces.Head].showControlHairs(false);
+            this.modes[this.modeIndeces.Head].showCollisionSpheres(false);
         }
 
 
@@ -509,26 +500,23 @@ export class App {
         else if (this.options.mode == this.modeIndeces.Plane) {
             this.modes[this.modeIndeces.Plane].setVisible(true);
             this.modes[this.modeIndeces.Plane].showControlHairs(this.options.showControlHairs);
-        }
+            let spheres = this.modes[this.modeIndeces.Plane].system.collisionSpheres;
+            for (let i = 0; i < spheres.length; i++)
+                spheres[i].setVisible(this.options.showCollisionSpheres);
 
-        /*
-        else if (this.options.mode == this.modeIndeces.Skull)
-        {
-            this.modes[this.modeIndeces.Skull].setVisible(true);
-            this.modes[this.modeIndeces.Skull].showControlHairs(this.options.showControlHairs);
         }
-        */
 
         else if (this.options.mode == this.modeIndeces.Head) {
             this.modes[this.modeIndeces.Head].setVisible(true);
             this.modes[this.modeIndeces.Head].showControlHairs(this.options.showControlHairs);
+            this.modes[this.modeIndeces.Head].showCollisionSpheres(this.options.showCollisionSpheres);
+
         }
 
         this.currentModeIndex = this.options.mode;
     }
 
     updatePosition(delta) {  // TODO put it in model?
-        //let model = this.currentModeIndex == this.modeIndeces.Skull ? this.modes[this.modeIndeces.Skull] : (this.currentModeIndex == this.modeIndeces.Head ? this.modes[this.modeIndeces.Head] : null) ;
         let model = this.modes[this.currentModeIndex];
         if (model == null)
             return;
@@ -561,21 +549,24 @@ export class App {
     updatePositionCard(delta) {
         let model = this.currentModeIndex == this.modeIndeces.Plane ? this.modes[this.modeIndeces.Plane] : null;
 
+        let position = model.system.particles[0].position;
         let tt = delta * 0.2;
-        if (this.isKeyW) {
-            let position = model.system.particles[0].position;
+        if (this.isKeyQ) {
             model.setPosition(position[0], position[1] + tt, position[2]);
         }
-        if (this.isKeyS) {
-            let position = model.system.particles[0].position;
+        if (this.isKeyE) {
             model.setPosition(position[0], position[1] - tt, position[2]);
         }
+        if (this.isKeyW) {
+            model.setPosition(position[0], position[1], position[2] - tt);
+        }
+        if (this.isKeyS) {
+            model.setPosition(position[0], position[1], position[2] + tt);
+        }
         if (this.isKeyA) {
-            let position = model.system.particles[0].position;
             model.setPosition(position[0] - tt, position[1], position[2]);
         }
         if (this.isKeyD) {
-            let position = model.system.particles[0].position;
             model.setPosition(position[0] + tt, position[1], position[2]);
         }
 
