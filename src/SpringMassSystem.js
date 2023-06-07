@@ -318,7 +318,7 @@ export class MultipleSpringMassSystem {
 
             // FORCE CALCULATIONS
             var endPos = (j > 0) ? this.particles[j-1].position : this.particles[0].position;
-            let d = 0.02;
+            let d = 0.2;
             
             let vec1 = [ position1.x - endPos.x , position1.y - endPos.y, position1.z - endPos.z ];
             let dist1 = lengthVec3(vec1);
@@ -389,19 +389,18 @@ export let modes = {
     inextensible: 1,
 }
 
-export class ParticleSystemFromCard {
-    mass = 20;
-
-    particles = [];
-
+export class MassSpringHairCardSystem {
+    
+    // control parameters
     damping = 100;
     k = 800;
     gravity = -9.98;
+    mass = 20;
 
-    mode = modes.inextensible;
-
+    particles = [];
     lines = [];
 
+    mode = modes.inextensible;
     collisionSpheres = null;
 
     constructor(position, localOffsets, {damping, k, gravity, mass}) {

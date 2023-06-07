@@ -1,7 +1,7 @@
 import * as THREE from 'https://cdn.skypack.dev/three@0.136';
-import { ParticleSystemFromCard } from './SpringMassSystem.js';
+import { MassSpringHairCardSystem } from './SpringMassSystem.js';
 
-export class entitySystem {
+export class HairCard {
     mesh = null;
     system = null;
     initWPos = [];
@@ -39,7 +39,7 @@ export class entitySystem {
         }
     }
 
-    loadParticleSystemFromCard = (mesh, options) => {
+    loadMassSpringHairCardSystem = (mesh, options) => {
         let position = mesh.geometry.getAttribute('position')
         let initWPos = [];
         let localOffsets = [];
@@ -67,7 +67,7 @@ export class entitySystem {
             localOffsets.push(offset);
         }
 
-        return { system: new ParticleSystemFromCard(initWPos, localOffsets, options), initWPos: initWPos };
+        return { system: new MassSpringHairCardSystem(initWPos, localOffsets, options), initWPos: initWPos };
     }
 
     initHairSystem = (index, worldPos, options, worldNorm = null, collisionSpheres = null ) => {
@@ -121,7 +121,7 @@ export class entitySystem {
 
         plane.updateMatrixWorld();
 
-        let { system, initWPos } = this.loadParticleSystemFromCard(plane, options);
+        let { system, initWPos } = this.loadMassSpringHairCardSystem(plane, options);
         system.setAnchor([worldPos.x, worldPos.y, worldPos.z]);
         system.collisionSpheres = collisionSpheres;    // TODO: idk if this is optimal
 
@@ -182,7 +182,7 @@ export class entitySystem {
 
     restart(options, worldPos)
     {
-        this.system = new ParticleSystemFromCard(this.initWPos, options);
+        this.system = new MassSpringHairCardSystem(this.initWPos, options);
         this.system.setAnchor([worldPos.x, worldPos.y, worldPos.z]);
     }
 
@@ -219,7 +219,7 @@ export class CollisionSphere {
 }
 
 
-export class skullSystem {
+export class Head {
     skull = null;
     hairCards = [];
     initPosition = [];
@@ -254,7 +254,7 @@ export class skullSystem {
             normal.fromBufferAttribute(normals, index);
             let worldNorm = this.skull.localToWorld(normal);
 
-            let hairCard = new entitySystem(null, null, null);
+            let hairCard = new HairCard(null, null, null);
             hairCard.initHairSystem(index, worldPos, options, worldNorm, this.collisionSpheres);
             this.hairCards.push(hairCard);
 

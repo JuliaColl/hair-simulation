@@ -3,8 +3,8 @@ import { OrbitControls } from 'https://cdn.skypack.dev/three@0.136/examples/jsm/
 import { GLTFLoader } from 'https://cdn.skypack.dev/three@0.136/examples/jsm/loaders/GLTFLoader.js';
 import { GUI } from 'https://cdn.skypack.dev/lil-gui';
 
-import { SpringMassSystem1D, SpringMassSystem2D, MultipleSpringMassSystem, ParticleSystemFromCard, modes } from './SpringMassSystem.js';
-import { skullSystem, entitySystem, CollisionSphere } from './model.js'
+import { SpringMassSystem1D, SpringMassSystem2D, MultipleSpringMassSystem, MassSpringHairCardSystem, modes } from './SpringMassSystem.js';
+import { Head, HairCard, CollisionSphere } from './model.js'
 
 export class App {
 
@@ -361,7 +361,7 @@ export class App {
 
         let collision = new CollisionSphere([0, 1.4, 0.2], 0.05);
         collision.mesh.visible = false;
-        this.modes[this.modeIndeces.Plane] = new entitySystem(null, null, null);
+        this.modes[this.modeIndeces.Plane] = new HairCard(null, null, null);
         this.modes[this.modeIndeces.Plane].initHairSystem(0, new THREE.Vector3(0, 1.5, 0), this.options, null, [collision]);
         this.modes[this.modeIndeces.Plane].mesh.rotateX(-1);
         this.modes[this.modeIndeces.Plane].mesh.updateMatrixWorld();
@@ -395,7 +395,7 @@ export class App {
 
             let indeces = [1500, 1510, 662, 1544, 631];
             let pos = [0, 0, 0];
-            this.modes[this.modeIndeces.Head] = new skullSystem(head, indeces, this.options, pos);
+            this.modes[this.modeIndeces.Head] = new Head(head, indeces, this.options, pos);
 
             let radius = [0.082, 0.045];
             let posSphere = [[0,1.585,0.01], [0,1.47, 0]];
