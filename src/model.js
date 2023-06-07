@@ -28,6 +28,10 @@ export class entitySystem {
         this.system.showLines(bool);
     }
 
+    changeMode(mode){
+       this.system.changeMode(mode);
+    }
+
     addToScene = (scene) => {
         scene.add(this.mesh);
         for (let i = 0; i < this.system.lines.length; i++) {
@@ -221,6 +225,8 @@ export class skullSystem {
     initPosition = [];
     collisionSpheres = [];
 
+    headSystem = null;  //group containg the skull and the collisionSpheres
+
     constructor(headMesh, indeces, options, wPos = [0, 0, 0]) {
         this.skull = headMesh;    //mesh of the head
 
@@ -251,23 +257,38 @@ export class skullSystem {
             let hairCard = new entitySystem(null, null, null);
             hairCard.initHairSystem(index, worldPos, options, worldNorm, this.collisionSpheres);
             this.hairCards.push(hairCard);
+
+            // TRY GROUP
+            // this.headSystem = new THREE.Group();
+            // this.headSystem.add(this.skull);
         }
     }
 
     addCollisionsSphere = (position, radius) => {
-        this.collisionSpheres.push(new CollisionSphere(position, radius));
+        let cs = new CollisionSphere(position, radius);
+        this.collisionSpheres.push(cs);
+
+        // TRY GROUP
+        // this.headSystem.add(cs.mesh);
+
     }
    
 
     addToScene = (scene) => {
-        scene.add(this.skull);
+       // TRY GROUP
+       //scene.add(this.headSystem);
+        
+       scene.add(this.skull);
+
         for (let i = 0; i < this.hairCards.length; i++) {
             this.hairCards[i].addToScene(scene);
         }
 
+        
         for(let i = 0; i < this.collisionSpheres.length; i++) {
             this.collisionSpheres[i].addToScene(scene);
         }
+        
 
     }
 
@@ -307,16 +328,22 @@ export class skullSystem {
     };
 
     moveSkull = (dx, dy, dz) => {
-        let position = this.skull.position;
+        // TRY GROUP
+        // let position = this.headSystem.position;
+        // this.headSystem.position.set(position.x + dx, position.y + dy, position.z + dz);
+        // this.headSystem.updateMatrixWorld();
+        // this.updateCollisionSphere();
 
+        let position = this.skull.position;
         this.skull.position.set(position.x + dx, position.y + dy, position.z + dz);
         this.skull.updateMatrixWorld();
-
+        
         this.moveCollisionSpheres(dx, dy, dz);
+
         this.updateHairCardsPos();
     }
 
-    moveCollisionSpheres = (dx,dy,dz) => {
+    moveCollisionSpheres = (dx, dy, dz) => {
         for (let i = 0; i < this.collisionSpheres.length; i++){
             this.collisionSpheres[i].center[0] += dx;
             this.collisionSpheres[i].center[1] += dy;
@@ -327,12 +354,32 @@ export class skullSystem {
         }
     }
 
+    updateCollisionSphere = () => {
+        for (let i = 0; i < this.collisionSpheres.length; i++){
+            
+            
+            let position = this.collisionSpheres[i].mesh.position;
+            //let position = THREE.Vector3();
+            //this.collisionSpheres[i].mesh.getWorldPosition( position );
+
+            this.collisionSpheres[i].center[0] = position.x;
+            this.collisionSpheres[i].center[1] = position.y;
+            this.collisionSpheres[i].center[2] = position.z;
+
+           
+        }
+    }
+
     rotateSkull = (rad) => {
-        //this.skull.rotation.z += rad;
-        //this.skull.rotation.x += rad;
+        
+
+        // TRY GROUP
+        // this.headSystem.rotation.y += rad;
+        // this.headSystem.updateMatrixWorld();
+        // this.updateCollisionSphere();
+        
         this.skull.rotation.y += rad;
         this.skull.updateMatrixWorld();
-
         this.rotateCards(rad);
         this.updateHairCardsPos();
     }
@@ -362,4 +409,11 @@ export class skullSystem {
             this.collisionSpheres[i].setVisible(bool);
         }
     }
+
+    changeMode(mode){
+        for (let i = 0; i < this.hairCards.length; i++) {
+            this.hairCards[i].changeMode(mode);
+
+        }
+     }
 }

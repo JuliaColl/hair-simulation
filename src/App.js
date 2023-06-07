@@ -3,7 +3,7 @@ import { OrbitControls } from 'https://cdn.skypack.dev/three@0.136/examples/jsm/
 import { GLTFLoader } from 'https://cdn.skypack.dev/three@0.136/examples/jsm/loaders/GLTFLoader.js';
 import { GUI } from 'https://cdn.skypack.dev/lil-gui';
 
-import { SpringMassSystem1D, SpringMassSystem2D, MultipleSpringMassSystem, ParticleSystemFromCard } from './SpringMassSystem.js';
+import { SpringMassSystem1D, SpringMassSystem2D, MultipleSpringMassSystem, ParticleSystemFromCard, modes } from './SpringMassSystem.js';
 import { skullSystem, entitySystem, CollisionSphere } from './model.js'
 
 export class App {
@@ -97,19 +97,21 @@ export class App {
             Head: 3
         }
 
-        this.currentModeIndex = this.modeIndeces.Head;
+        this.currentModeIndex = this.modeIndeces.MassSpring;
+        //this.currentSystemMode = modes.inextensible;
 
         this.modes = [];
 
         // init gui
         this.options = {
-            damping: 100,
-            k: 800,
-            gravity: -9.98,
-            mass: 1.5,
+            damping: 3,
+            k: 100,
+            gravity: -10.0,
+            mass: 0.02,
             set: () => { this.set() },
             restart: () => { this.restart() },
             mode: this.currentModeIndex,
+            systemMode: modes.inextensible,
             showControlHairs: false,
             showCollisionSpheres: true,
             applyPhysics: false,
@@ -117,8 +119,9 @@ export class App {
 
         let gui = new GUI().title('Evaluate Dataset Options');
         gui.add(this.options, 'mode', this.modeIndeces).name('Mode');
-        gui.add(this.options, 'damping', 0, 1000).name('Damping');
-        gui.add(this.options, 'k', 0, 1000).name('K');
+        gui.add(this.options, 'systemMode', modes).name('System Mode');
+        gui.add(this.options, 'damping', 0.01, 1000).name('Damping');
+        gui.add(this.options, 'k', 0.01, 1000).name('K');
         gui.add(this.options, 'gravity', -100, 0).name('Gravity');
         gui.add(this.options, 'mass', 0, 100).name('Mass');
         gui.add(this.options, 'showControlHairs').name('Show Control Hairs');
@@ -149,6 +152,10 @@ export class App {
 
                 }
 
+            }
+
+            if (event.property === 'systemMode') {
+                this.modes[this.currentModeIndex].changeMode(event.value);
             }
         })
 
@@ -336,7 +343,7 @@ export class App {
     */
 
     initOnlyMassSpringSystem() {
-        var length = 4;
+        var length = 5;
         this.modes[this.modeIndeces.MassSpring] = new MultipleSpringMassSystem(length, this.options);
         for (var i = 0; i < length; i++) {
             this.scene.add(this.modes[this.modeIndeces.MassSpring].particles[i]);
@@ -345,7 +352,7 @@ export class App {
             }
         }
 
-        this.modes[this.modeIndeces.MassSpring].setVisible(false);
+        this.modes[this.modeIndeces.MassSpring].setVisible(this.currentModeIndex == this.modeIndeces.MassSpring);
 
 
     };
@@ -399,7 +406,7 @@ export class App {
             this.modes[this.modeIndeces.Head].addToScene(this.scene);
             this.modes[this.modeIndeces.Head].setVisible(this.currentModeIndex == this.modeIndeces.Head);
             this.modes[this.modeIndeces.Head].showControlHairs(this.options.showControlHairs);
-            this.modes[this.modeIndeces.Head].showCollisionSpheres(this.options.showCollisionSpheres);
+            this.modes[this.modeIndeces.Head].showCollisionSpheres(this.currentModeIndex == this.modeIndeces.Head && this.options.showCollisionSpheres);
 
             
         });
@@ -441,6 +448,7 @@ export class App {
 
         if (this.currentModeIndex == this.modeIndeces.MassSpring && this.modes[this.modeIndeces.MassSpring]) {
             this.modes[this.modeIndeces.MassSpring].update(delta);
+            this.updateSystemPosition(delta)
         }
 
 
@@ -548,6 +556,8 @@ export class App {
 
     updatePositionCard(delta) {
         let model = this.currentModeIndex == this.modeIndeces.Plane ? this.modes[this.modeIndeces.Plane] : null;
+        if (model == null)
+        return;
 
         let position = model.system.particles[0].position;
         let tt = delta * 0.2;
@@ -573,6 +583,34 @@ export class App {
         if (this.isSpace) {
             this.modes[this.modeIndeces.Plane].rotateCard(delta);
         }
+    }
+
+    updateSystemPosition(delta) {
+        let model = this.currentModeIndex == this.modeIndeces.MassSpring ? this.modes[this.modeIndeces.MassSpring] : null;
+        if (model == null)
+            return;
+
+        let position = model.particles[0].position;
+        let tt = delta * 0.2;
+        if (this.isKeyQ) {
+            model.setAnchor(position.x, position.y + tt, position.z);
+        }
+        if (this.isKeyE) {
+            model.setAnchor(position.x, position.y - tt, position.z);
+        }
+        if (this.isKeyW) {
+            model.setAnchor(position.x, position.y, position.z - tt);
+        }
+        if (this.isKeyS) {
+            model.setAnchor(position.x, position.y, position.z + tt);
+        }
+        if (this.isKeyA) {
+            model.setAnchor(position.x - tt, position.y, position.z);
+        }
+        if (this.isKeyD) {
+            model.setAnchor(position.x + tt, position.y, position.z);
+        }
+
     }
 
 }
