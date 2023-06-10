@@ -1,6 +1,8 @@
 import * as THREE from 'https://cdn.skypack.dev/three@0.136';
 import { MassSpringHairCardSystem } from './SpringMassSystem.js';
 
+let numberOfParticles = 7;
+
 export class HairCard {
     mesh = null;
     system = null;
@@ -36,6 +38,11 @@ export class HairCard {
         scene.add(this.mesh);
         for (let i = 0; i < this.system.lines.length; i++) {
             scene.add(this.system.lines[i]);
+        }
+
+        for (let i = 0; i < this.system.particles.length; i++) {
+            scene.add(this.system.particles[i].mesh);
+
         }
     }
 
@@ -135,7 +142,7 @@ export class HairCard {
     createHairCard = () => {
         let width = 0.05;
         let height = 0.1;
-        const cardGeometry = new THREE.PlaneGeometry(width, height, 1, 4);
+        const cardGeometry = new THREE.PlaneGeometry(width, height, 1, numberOfParticles);
         
         // add atributtes to store width and height
         cardGeometry.height = height;
@@ -167,14 +174,12 @@ export class HairCard {
             const particle = this.system.particles[i];
 
             const vertexIndex = particle.index;
-            let aux1 = new THREE.Vector3(particle.position[0], particle.position[1], particle.position[2]);
-            let lPos1 = this.mesh.worldToLocal(aux1);
+            let aux = new THREE.Vector3(particle.position[0], particle.position[1], particle.position[2]);
+            let lPos = this.mesh.worldToLocal(aux);
             
-            let aux2 = new THREE.Vector3(particle.position[0], particle.position[1], particle.position[2]);
-            let lPos2 = this.mesh.worldToLocal(aux2);
 
-            position.setXYZ(vertexIndex, lPos1.x - particle.offset[0] / 2, lPos1.y - particle.offset[1] / 2, lPos1.z - particle.offset[2] / 2);
-            position.setXYZ(vertexIndex + 1, lPos2.x + particle.offset[0] / 2, lPos2.y + particle.offset[1] / 2, lPos2.z + particle.offset[2] / 2);
+            position.setXYZ(vertexIndex, lPos.x - particle.offset[0] / 2, lPos.y - particle.offset[1] / 2, lPos.z - particle.offset[2] / 2);
+            position.setXYZ(vertexIndex + 1, lPos.x + particle.offset[0] / 2, lPos.y + particle.offset[1] / 2, lPos.z + particle.offset[2] / 2);
             position.needsUpdate = true;
 
         }

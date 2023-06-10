@@ -86,13 +86,12 @@ export class App {
         // Set listeners and events
         window.addEventListener('resize', this.onWindowResize.bind(this));
         window.addEventListener('click', this.onClick);
-        document.onkeydown = (e) => { this.setKeyEvent(e, true); };
-
-        document.onkeyup = (e) => { this.setKeyEvent(e, false); }
+        document.onkeydown = (e) => { this.onKey(e, true); };
+        document.onkeyup = (e) => { this.onKey(e, false); }
 
         this.modeIndeces = {
             MassSpring: 0,
-            Plane: 1,
+            HairCard: 1,
             //Skull: 2,
             Head: 3
         }
@@ -131,33 +130,7 @@ export class App {
         gui.add(this.options, 'set').name('Set params');
         gui.add(this.options, 'restart').name('Restart demo');
 
-        gui.onChange(event => {
-            if (event.property === 'showControlHairs') {
-                if (this.currentModeIndex == this.modeIndeces.MassSpring)
-                    return;
-
-                this.modes[this.currentModeIndex].showControlHairs(event.value);
-            }
-
-            if (event.property === 'showCollisionSpheres') {
-                if (this.currentModeIndex == this.modeIndeces.Head)
-                    this.modes[this.currentModeIndex].showCollisionSpheres(event.value);
-                
-                else if (this.currentModeIndex == this.modeIndeces.Plane)
-                {
-                    let spheres = this.modes[this.modeIndeces.Plane].system.collisionSpheres;
-
-                    for (let i = 0; i < spheres.length; i++)
-                        spheres[i].setVisible(event.value);
-
-                }
-
-            }
-
-            if (event.property === 'systemMode') {
-                this.modes[this.currentModeIndex].changeMode(event.value);
-            }
-        })
+        gui.onChange(this.onGUI);
 
         // init models
         this.initOnlyMassSpringSystem();
@@ -174,7 +147,7 @@ export class App {
         this.animate();
     };
 
-    setKeyEvent(e, bool) {
+    onKey(e, bool) {
         if (e.code === 'KeyW')
             this.isKeyW = bool;
 
@@ -260,116 +233,60 @@ export class App {
 
     }
 
+    onGUI = (event) => {
+        if (event.property === 'showControlHairs') {
+            if (this.currentModeIndex == this.modeIndeces.MassSpring)
+                return;
 
-    set() {
-        if (this.currentModeIndex == this.options.mode) {
+            this.modes[this.currentModeIndex].showControlHairs(event.value);
+        }
 
-            if (this.options.mode == this.modeIndeces.MassSpring) {
-                this.modes[this.modeIndeces.MassSpring].setParams(this.options);
-            }
+        if (event.property === 'showCollisionSpheres') {
+            if (this.currentModeIndex == this.modeIndeces.Head)
+                this.modes[this.currentModeIndex].showCollisionSpheres(event.value);
+            
+            else if (this.currentModeIndex == this.modeIndeces.HairCard)
+            {
+                let spheres = this.modes[this.modeIndeces.HairCard].system.collisionSpheres;
 
-            else if (this.options.mode == this.modeIndeces.Plane) {
-                this.modes[this.modeIndeces.Plane].system.setParams(this.options);
-            }
-
-            //else if (this.options.mode == this.modeIndeces.Skull || this.options.mode == this.modeIndeces.Head) {
-            else if (this.options.mode == this.modeIndeces.Head) {
-
-                //let model = this.options.mode == this.modeIndeces.Skull ? this.modes[this.modeIndeces.Skull] : this.modes[this.modeIndeces.Head];
-                let model = this.modes[this.modeIndeces.Head];
-                for (let i = 0; i < model.hairCards.length; i++) {
-                    model.hairCards[i].system.setParams(this.options);
-                }
-
+                for (let i = 0; i < spheres.length; i++)
+                    spheres[i].setVisible(event.value);
             }
 
         }
-    };
 
-    restart() {
-        if (this.options.mode == this.modeIndeces.MassSpring) {
-            this.modes[this.modeIndeces.MassSpring].setParams(this.options);
-            this.modes[this.modeIndeces.MassSpring].restart();
-        }
-
-        else if (this.options.mode == this.modeIndeces.Plane) {
-            this.modes[this.modeIndeces.Plane].restart(this.options, new THREE.Vector3(0, 1.5, 0));
+        if (event.property === 'systemMode') {
+            this.modes[this.currentModeIndex].changeMode(event.value);
         }
 
 
-        //else if (this.options.mode == this.modeIndeces.Head) {
-        else if (this.options.mode == this.modeIndeces.Skull || this.options.mode == this.modeIndeces.Head) {
-            //let model = this.options.mode == this.modeIndeces.Skull ? this.modes[this.modeIndeces.Skull] : this.modes[this.modeIndeces.Head];
-            this.modes[this.modeIndeces.Head].restart(this.options);
+        if (event.property === 'mode') {
+            this.updateMode();
         }
-
-
-    };
-
-
-
-    /*
-    createHairCard() {
-        const cardGeometry = new THREE.PlaneGeometry(0.05, 0.1, 1, 4);
-        //const cardMaterial = new THREE.MeshBasicMaterial({ color: 0xffff00, side: THREE.DoubleSide });
-
-        const textureLoader = new THREE.TextureLoader();
-        const texture = textureLoader.load('/data/Strand4RGB.png');
-        const aTexture = textureLoader.load('/data/Strand4A.png');
-        let cardMaterial = new THREE.MeshStandardMaterial({ map: texture, side: THREE.DoubleSide, alphaMap: aTexture });
-        let cardMesh = new THREE.Mesh(cardGeometry, cardMaterial);
-        cardMesh.frustumCulled = false;
-        cardMaterial.transparent = true;
         
-        return cardMesh;
+
     }
-
-    createHairCone() {
-        // Create a plane geometry with width and height of 1 unit
-        const coneGeometry = new THREE.ConeGeometry(0.1, 2.0, 4, 1, false);
-        console.log(coneGeometry)
-
-        // Create a basic material with a color and no textures
-        const coneMaterial = new THREE.MeshBasicMaterial({ color: 0xffffff });
-
-        // Create a mesh by combining the geometry and material
-        this.coneMesh = new THREE.Mesh(coneGeometry, coneMaterial);
-
-        this.coneMesh.position.set(0, 0, 0);
-
-        // Add the mesh to the scene
-        this.scene.add(this.coneMesh);
-    }
-    */
 
     initOnlyMassSpringSystem() {
-        var length = 5;
+        var length = 9;
         this.modes[this.modeIndeces.MassSpring] = new MultipleSpringMassSystem(length, this.options);
-        for (var i = 0; i < length; i++) {
-            this.scene.add(this.modes[this.modeIndeces.MassSpring].particles[i]);
-            if (i > 0) {
-                this.scene.add(this.modes[this.modeIndeces.MassSpring].lines[i]);
-            }
-        }
-
+        this.modes[this.modeIndeces.MassSpring].addToScene(this.scene);
         this.modes[this.modeIndeces.MassSpring].setVisible(this.currentModeIndex == this.modeIndeces.MassSpring);
-
-
     };
 
     initOnlyOnePlaneSytem() {
 
         let collision = new CollisionSphere([0, 1.4, 0.2], 0.05);
         collision.mesh.visible = false;
-        this.modes[this.modeIndeces.Plane] = new HairCard(null, null, null);
-        this.modes[this.modeIndeces.Plane].initHairSystem(0, new THREE.Vector3(0, 1.5, 0), this.options, null, [collision]);
-        this.modes[this.modeIndeces.Plane].mesh.rotateX(-1);
-        this.modes[this.modeIndeces.Plane].mesh.updateMatrixWorld();
+        this.modes[this.modeIndeces.HairCard] = new HairCard(null, null, null);
+        this.modes[this.modeIndeces.HairCard].initHairSystem(0, new THREE.Vector3(0, 1.5, 0), this.options, null, [collision]);
+        this.modes[this.modeIndeces.HairCard].mesh.rotateX(-1);
+        this.modes[this.modeIndeces.HairCard].mesh.updateMatrixWorld();
 
         this.scene.add(collision.mesh);
-        this.modes[this.modeIndeces.Plane].addToScene(this.scene);
-        this.modes[this.modeIndeces.Plane].setVisible(this.currentModeIndex == this.modeIndeces.Plane);
-        this.modes[this.modeIndeces.Plane].showControlHairs(this.options.showControlHairs);
+        this.modes[this.modeIndeces.HairCard].addToScene(this.scene);
+        this.modes[this.modeIndeces.HairCard].setVisible(this.currentModeIndex == this.modeIndeces.HairCard);
+        this.modes[this.modeIndeces.HairCard].showControlHairs(this.options.showControlHairs);
     };
 
     initHead() {
@@ -393,7 +310,9 @@ export class App {
 
             head.updateMatrixWorld(); // make sure the object's world matrix is up-to-date
 
-            let indeces = [1500, 1510, 662, 1544, 631];
+
+            //let indeces = [1500, 1510, 662, 1544, 631];
+            let indeces = [1500, 1510, 662, 1544, 631, 634, 660, 659,652, 644, 678, 641, 1540,1524, 1536, 611, 600, 658, 1536, 1533, 604, 621, 497, 648, 1530, 2546, 1535, 1389, 1528, 1555];
             let pos = [0, 0, 0];
             this.modes[this.modeIndeces.Head] = new Head(head, indeces, this.options, pos);
 
@@ -412,14 +331,56 @@ export class App {
         });
     }
 
+    set() {
+        if (this.currentModeIndex == this.options.mode) {
+
+            if (this.options.mode == this.modeIndeces.MassSpring) {
+                this.modes[this.modeIndeces.MassSpring].setParams(this.options);
+            }
+
+            else if (this.options.mode == this.modeIndeces.HairCard) {
+                this.modes[this.modeIndeces.HairCard].system.setParams(this.options);
+            }
+
+            //else if (this.options.mode == this.modeIndeces.Skull || this.options.mode == this.modeIndeces.Head) {
+            else if (this.options.mode == this.modeIndeces.Head) {
+
+                //let model = this.options.mode == this.modeIndeces.Skull ? this.modes[this.modeIndeces.Skull] : this.modes[this.modeIndeces.Head];
+                let model = this.modes[this.modeIndeces.Head];
+                for (let i = 0; i < model.hairCards.length; i++) {
+                    model.hairCards[i].system.setParams(this.options);
+                }
+
+            }
+
+        }
+    };
+
+    restart() {
+        if (this.options.mode == this.modeIndeces.MassSpring) {
+            this.modes[this.modeIndeces.MassSpring].setParams(this.options);
+            this.modes[this.modeIndeces.MassSpring].restart();
+        }
+
+        else if (this.options.mode == this.modeIndeces.HairCard) {
+            this.modes[this.modeIndeces.HairCard].restart(this.options, new THREE.Vector3(0, 1.5, 0));
+        }
+
+
+        //else if (this.options.mode == this.modeIndeces.Head) {
+        else if (this.options.mode == this.modeIndeces.Skull || this.options.mode == this.modeIndeces.Head) {
+            //let model = this.options.mode == this.modeIndeces.Skull ? this.modes[this.modeIndeces.Skull] : this.modes[this.modeIndeces.Head];
+            this.modes[this.modeIndeces.Head].restart(this.options);
+        }
+
+
+    };
+
     onWindowResize() {
 
         this.camera.aspect = window.innerWidth / window.innerHeight;
         this.camera.updateProjectionMatrix();
         this.renderer.setSize(window.innerWidth, window.innerHeight);
-
-        // set the pixel ratio (for mobile devices)
-        //renderer.setPixelRatio(window.devicePixelRatio);
     }
 
     animate() {
@@ -442,37 +403,24 @@ export class App {
 
     update(delta) {
 
-        if (this.currentModeIndex != this.options.mode)
-            this.updateMode();
-
-
         if (this.currentModeIndex == this.modeIndeces.MassSpring && this.modes[this.modeIndeces.MassSpring]) {
             this.modes[this.modeIndeces.MassSpring].update(delta);
             this.updateSystemPosition(delta)
         }
 
 
-        if (this.currentModeIndex == this.modeIndeces.Plane && this.modes[this.modeIndeces.Plane]) {
-            this.modes[this.modeIndeces.Plane].updateHairCardSystem(delta);
+        if (this.currentModeIndex == this.modeIndeces.HairCard && this.modes[this.modeIndeces.HairCard]) {
+            this.modes[this.modeIndeces.HairCard].updateHairCardSystem(delta);
             this.updatePositionCard(delta);
-
         }
 
 
-        //else if (this.currentModeIndex == this.modeIndeces.Skull || this.currentModeIndex == this.modeIndeces.Head) {
-        else if (this.options.mode == this.modeIndeces.Skull || this.options.mode == this.modeIndeces.Head) {
-
-            //let model = this.currentModeIndex == this.modeIndeces.Skull ? this.modes[this.modeIndeces.Skull] : this.modes[this.modeIndeces.Head];
-            let model = this.modes[this.modeIndeces.Head];
-            if (!model)
-                return;
+        else if (this.currentModeIndex == this.modeIndeces.Head && this.modes[this.modeIndeces.Head]) {
 
             if (this.options.applyPhysics) {
-                model.updateSystem(delta);
+                this.modes[this.modeIndeces.Head].updateSystem(delta);
                 this.updatePosition(delta);
             }
-
-
         }
 
     };
@@ -485,10 +433,10 @@ export class App {
         if (this.currentModeIndex == this.modeIndeces.MassSpring)
             this.modes[this.modeIndeces.MassSpring].setVisible(false);
 
-        else if (this.currentModeIndex == this.modeIndeces.Plane) {
-            this.modes[this.modeIndeces.Plane].setVisible(false);
-            this.modes[this.modeIndeces.Plane].showControlHairs(false);
-            let spheres = this.modes[this.modeIndeces.Plane].system.collisionSpheres;
+        else if (this.currentModeIndex == this.modeIndeces.HairCard) {
+            this.modes[this.modeIndeces.HairCard].setVisible(false);
+            this.modes[this.modeIndeces.HairCard].showControlHairs(false);
+            let spheres = this.modes[this.modeIndeces.HairCard].system.collisionSpheres;
             for (let i = 0; i < spheres.length; i++)
                 spheres[i].setVisible(false);
 
@@ -505,10 +453,10 @@ export class App {
         if (this.options.mode == this.modeIndeces.MassSpring)
             this.modes[this.modeIndeces.MassSpring].setVisible(true);
 
-        else if (this.options.mode == this.modeIndeces.Plane) {
-            this.modes[this.modeIndeces.Plane].setVisible(true);
-            this.modes[this.modeIndeces.Plane].showControlHairs(this.options.showControlHairs);
-            let spheres = this.modes[this.modeIndeces.Plane].system.collisionSpheres;
+        else if (this.options.mode == this.modeIndeces.HairCard) {
+            this.modes[this.modeIndeces.HairCard].setVisible(true);
+            this.modes[this.modeIndeces.HairCard].showControlHairs(this.options.showControlHairs);
+            let spheres = this.modes[this.modeIndeces.HairCard].system.collisionSpheres;
             for (let i = 0; i < spheres.length; i++)
                 spheres[i].setVisible(this.options.showCollisionSpheres);
 
@@ -555,7 +503,7 @@ export class App {
     }
 
     updatePositionCard(delta) {
-        let model = this.currentModeIndex == this.modeIndeces.Plane ? this.modes[this.modeIndeces.Plane] : null;
+        let model = this.currentModeIndex == this.modeIndeces.HairCard ? this.modes[this.modeIndeces.HairCard] : null;
         if (model == null)
         return;
 
@@ -581,7 +529,7 @@ export class App {
         }
 
         if (this.isSpace) {
-            this.modes[this.modeIndeces.Plane].rotateCard(delta);
+            this.modes[this.modeIndeces.HairCard].rotateCard(delta);
         }
     }
 
