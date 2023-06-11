@@ -6,6 +6,8 @@ import { GUI } from 'https://cdn.skypack.dev/lil-gui';
 import { SpringMassSystem1D, SpringMassSystem2D, MultipleSpringMassSystem, MassSpringHairCardSystem, modes } from './SpringMassSystem.js';
 import { Head, HairCard, CollisionSphere } from './model.js'
 
+let initPlanePos = new THREE.Vector3(0, 1.5, 0);
+
 export class App {
 
     constructor() {
@@ -278,10 +280,9 @@ export class App {
 
         let collision = new CollisionSphere([0, 1.4, 0.2], 0.05);
         collision.mesh.visible = false;
-        this.modes[this.modeIndeces.HairCard] = new HairCard(null, null, null);
-        this.modes[this.modeIndeces.HairCard].initHairSystem(0, new THREE.Vector3(0, 1.5, 0), this.options, null, [collision]);
-        this.modes[this.modeIndeces.HairCard].mesh.rotateX(-1);
-        this.modes[this.modeIndeces.HairCard].mesh.updateMatrixWorld();
+        this.modes[this.modeIndeces.HairCard] = new HairCard();
+        this.modes[this.modeIndeces.HairCard].initHairSystem(0, initPlanePos, this.options, null, [collision]);
+        
 
         this.scene.add(collision.mesh);
         this.modes[this.modeIndeces.HairCard].addToScene(this.scene);
@@ -311,16 +312,19 @@ export class App {
             head.updateMatrixWorld(); // make sure the object's world matrix is up-to-date
 
 
+            // init hair cards
             //let indeces = [1500, 1510, 662, 1544, 631];
             let indeces = [1500, 1510, 662, 1544, 631, 634, 660, 659,652, 644, 678, 641, 1540,1524, 1536, 611, 600, 658, 1536, 1533, 604, 621, 497, 648, 1530, 2546, 1535, 1389, 1528, 1555];
             let pos = [0, 0, 0];
             this.modes[this.modeIndeces.Head] = new Head(head, indeces, this.options, pos);
 
+            //init collision spheres
             let radius = [0.082, 0.045];
             let posSphere = [[0,1.585,0.01], [0,1.47, 0]];
 
             for(let i = 0; i < radius.length; i++)
                 this.modes[this.modeIndeces.Head].addCollisionsSphere(posSphere[i], radius[i])
+
 
             this.modes[this.modeIndeces.Head].addToScene(this.scene);
             this.modes[this.modeIndeces.Head].setVisible(this.currentModeIndex == this.modeIndeces.Head);
@@ -332,47 +336,22 @@ export class App {
     }
 
     set() {
-        if (this.currentModeIndex == this.options.mode) {
+        let model = this.modes[this.currentModeIndex];
 
-            if (this.options.mode == this.modeIndeces.MassSpring) {
-                this.modes[this.modeIndeces.MassSpring].setParams(this.options);
-            }
+        if (!this.currentModeIndex == this.options.mode || !model)
+            return;
 
-            else if (this.options.mode == this.modeIndeces.HairCard) {
-                this.modes[this.modeIndeces.HairCard].system.setParams(this.options);
-            }
+        model.setParams(this.options);
 
-            //else if (this.options.mode == this.modeIndeces.Skull || this.options.mode == this.modeIndeces.Head) {
-            else if (this.options.mode == this.modeIndeces.Head) {
-
-                //let model = this.options.mode == this.modeIndeces.Skull ? this.modes[this.modeIndeces.Skull] : this.modes[this.modeIndeces.Head];
-                let model = this.modes[this.modeIndeces.Head];
-                for (let i = 0; i < model.hairCards.length; i++) {
-                    model.hairCards[i].system.setParams(this.options);
-                }
-
-            }
-
-        }
     };
 
     restart() {
-        if (this.options.mode == this.modeIndeces.MassSpring) {
-            this.modes[this.modeIndeces.MassSpring].setParams(this.options);
-            this.modes[this.modeIndeces.MassSpring].restart();
-        }
+        let model = this.modes[this.currentModeIndex];
 
-        else if (this.options.mode == this.modeIndeces.HairCard) {
-            this.modes[this.modeIndeces.HairCard].restart(this.options, new THREE.Vector3(0, 1.5, 0));
-        }
+        if (!this.currentModeIndex == this.options.mode || !model)
+            return;
 
-
-        //else if (this.options.mode == this.modeIndeces.Head) {
-        else if (this.options.mode == this.modeIndeces.Skull || this.options.mode == this.modeIndeces.Head) {
-            //let model = this.options.mode == this.modeIndeces.Skull ? this.modes[this.modeIndeces.Skull] : this.modes[this.modeIndeces.Head];
-            this.modes[this.modeIndeces.Head].restart(this.options);
-        }
-
+        model.restart(this.options);
 
     };
 
@@ -388,8 +367,8 @@ export class App {
         requestAnimationFrame(this.animate.bind(this));
 
         let delta = this.clock.getDelta();
-        if (delta > 0.25)
-            delta = 0.25;
+        if (delta > 0.05)
+            delta = 0.05;
         this.accumulator += delta;
 
         while (this.accumulator >= this.dt) {

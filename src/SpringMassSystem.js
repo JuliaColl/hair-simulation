@@ -196,8 +196,8 @@ export class MultipleSpringMassSystem {
         this.gravity = gravity;
         //this.velocity = [0, 0];
 
-        this.anchor = createAnchor();
-        this.anchor.position.set(0, 4, 0);
+        //this.anchor = createAnchor();
+        //this.anchor.position.set(0, 4, 0);
 
         
 
@@ -225,9 +225,14 @@ export class MultipleSpringMassSystem {
         this.mode = (mode == modes.inextensible) ? modes.inextensible : modes.massSpring;
     }
 
-    restart(){
+    restart(options){
+        this.setParams(options);
+        this.particles[0].position.set(0,1.5,0);
+
         for(var j = 1; j < this.particles.length; j++){
-            this.particles[j].position.set(-3, 3, 0);
+            this.particles[j].position.set(0.1, 1.7, 0.05);
+            this.particles[j].velocity = [0,0,0];
+            //this.particles[j].updateMatrixWorld();
         }
     }
 
@@ -325,7 +330,7 @@ export class MultipleSpringMassSystem {
             var springForce1 = [-this.k*0.5*x[0], -this.k*0.5*x[1], -this.k*0.5*x[2]];
             normalizeVec3(vec1);
             let cos1 = scalarPorductVec3([0,1,0], vec1);
-            cos1 = (cos1 > 0) ? cos1 : 0;
+            cos1 = (cos1 == 1) ? cos1 : 0;
             springForce1 = (dist1 > d ) ? springForce1 : [springForce1[0], springForce1[1] + this.mass * this.gravity * cos1, springForce1[2]];
             
             
@@ -405,6 +410,7 @@ export class MassSpringHairCardSystem {
     k = 800;
     gravity = -9.98;
     mass = 20;
+    d = 0.03;
 
     particles = [];
     lines = [];
@@ -419,28 +425,21 @@ export class MassSpringHairCardSystem {
         this.k = k;
         this.gravity = gravity;
 
-        for(var i = 0; i < position.length; i = i + 2){
+        for(var i = 0; i < position.length; i++){
             // init particles
             let velocity = [0,0,0]
             let pos = [position[i].x, position[i].y, position[i].z];
 
-            
-            var offset = [0,0,0]
-
-            offset[0] = position[i+1].x - pos[0];
-            offset[1] = position[i+1].y - pos[1];
-            offset[2] = position[i+1].z - pos[2];
-            
-            let localOffset = localOffsets[i/2];
-            var p = new Particle([pos[0] + offset[0]/2, pos[1] + offset[1]/2, pos[2] + offset[2]/2 ], velocity, i, localOffset);
+            let localOffset = localOffsets[i];
+            var p = new Particle(pos, velocity, i*2, localOffset);
             this.particles.push(p)
 
             //add lines to show control hairs
             if (i != 0)
             {
                 let line = createLine();
-                let start = new THREE.Vector3(this.particles[i/2-1].position[0], this.particles[i/2-1].position[1], this.particles[i/2-1].position[2])
-                let end = new THREE.Vector3(this.particles[i/2].position[0], this.particles[i/2].position[1], this.particles[i/2].position[2]);
+                let start = new THREE.Vector3(this.particles[i-1].position[0], this.particles[i-1].position[1], this.particles[i-1].position[2])
+                let end = new THREE.Vector3(this.particles[i].position[0], this.particles[i].position[1], this.particles[i].position[2]);
                 line.geometry.setFromPoints([start, end]);
 
                 this.lines.push(line);
@@ -459,6 +458,14 @@ export class MassSpringHairCardSystem {
         this.damping = damping;
         this.k = k;
         this.gravity = gravity;
+    }
+
+    restart(options, particlePos){
+        this.setParams(options);
+        for(var j = 0; j < this.particles.length; j++){
+            this.particles[j].position = [...particlePos[j]];
+            this.particles[j].velocity = [0,0,0];
+        }
     }
 
     changeMode(mode){
@@ -549,37 +556,37 @@ export class MassSpringHairCardSystem {
             // FORCE CALCULATIONS
             var endPos = this.particles[j-1].position;
             
-            let d = 0.03;
+            //let d = 0.03;
             let vec1 = [ position1[0]- endPos[0], position1[1] - endPos[1], position1[2] - endPos[2] ];
             let dist1 = lengthVec3(vec1);
-            let x = (dist1 != 0) ? [(dist1 - d) * vec1[0] / dist1, (dist1 - d) * vec1[1] / dist1, (dist1 - d) * vec1[2] / dist1]  : [0,0,0];
-            var springForce1 = [-this.k*0.5*x[0], -this.k*0.5*x[1], -this.k*0.5*x[2]];
+            let x = (dist1 != 0) ? [(dist1 - this.d) * vec1[0] / dist1, (dist1 - this.d) * vec1[1] / dist1, (dist1 - this.d) * vec1[2] / dist1]  : [0,0,0];
+            var springForce1 = [-this.k*x[0], -this.k*x[1], -this.k*x[2]];
 
             normalizeVec3(vec1);
             let cos1 = scalarPorductVec3([0,1,0], vec1);
-            cos1 = (cos1 > 0) ? cos1 : 0;
-            springForce1 = (dist1 > d ) ? springForce1 : [springForce1[0], springForce1[1] + this.mass * this.gravity * cos1, springForce1[2]];
+            cos1 = (cos1 == 1) ? cos1 : 0;
+            springForce1 = (dist1 > this.d ) ? springForce1 : [springForce1[0], springForce1[1] + this.mass * this.gravity * cos1, springForce1[2]];
             
             
             var dampingForce1 = [ this.damping * velocity1[0], this.damping * velocity1[1], this.damping * velocity1[2] ];
             
 
-            // let vec2 = [ position2[0] - position1[0] , position2[1] - position1[1], position2[2] - position1[2] ];
-            // let dist2 = lengthVec3(vec2);
-            // x = (dist2 != 0) ? [(dist2 - d) * vec2[0] / dist2, (dist2 - d) * vec2[1] / dist2, (dist2 - d) * vec2[2] / dist2]  : [0,0,0];
-            // var springForce2 = [-this.k*0.5*x[0], -this.k*0.5*x[1], -this.k*0.5*x[2]];
-            // normalizeVec3(vec2);
-            // let cos2 = scalarPorductVec3([0,1,0], vec2);
-            // cos2 = (cos2 > 0) ? cos2 : 0;
-            // springForce2 = (dist2 > d ) ? springForce2 : [springForce2[0], springForce2[1] + this.mass * this.gravity * cos2, springForce2[2]];
+            let vec2 = [ position2[0] - position1[0] , position2[1] - position1[1], position2[2] - position1[2] ];
+            let dist2 = lengthVec3(vec2);
+            x = (dist2 != 0) ? [(dist2 - this.d) * vec2[0] / dist2, (dist2 - this.d) * vec2[1] / dist2, (dist2 - this.d) * vec2[2] / dist2]  : [1,1,1];
+            var springForce2 = [-this.k*x[0], -this.k*x[1], -this.k*x[2]];
+            normalizeVec3(vec2);
+            let cos2 = scalarPorductVec3([0,1,0], vec2);
+            cos2 = (cos2 == 1) ? cos2 : 0;
+            springForce2 = (dist2 > this.d ) ? springForce2 : [springForce2[0], springForce2[1] + this.mass * this.gravity * cos2, springForce2[2]];
 
 
-            // var dampingForce2 = [ this.damping * velocity2[0], this.damping * velocity2[1], this.damping * velocity2[2]];
+            var dampingForce2 = [ this.damping * velocity2[0], this.damping * velocity2[1], this.damping * velocity2[2]];
 
             var force = [0,0,0];
-            force[0] = springForce1[0] - dampingForce1[0]; // - springForce2[0] + dampingForce2[0]; 
-            force[1] = springForce1[1] + this.mass * this.gravity - dampingForce1[1]; // - springForce2[1] + dampingForce2[1];
-            force[2] = springForce1[2] - dampingForce1[2]; // - springForce2[2] + dampingForce2[2]; 
+            force[0] = springForce1[0] - dampingForce1[0];  - springForce2[0] + dampingForce2[0]; 
+            force[1] = springForce1[1] + this.mass * this.gravity - dampingForce1[1];  - springForce2[1] + dampingForce2[1];
+            force[2] = springForce1[2] - dampingForce1[2];  - springForce2[2] + dampingForce2[2]; 
 
             var acceleration = [force[0] / this.mass, force[1] / this.mass, force[2] / this.mass];
             velocity1[0] = velocity1[0] + acceleration[0] * delta;

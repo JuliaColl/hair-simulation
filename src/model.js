@@ -1,7 +1,7 @@
 import * as THREE from 'https://cdn.skypack.dev/three@0.136';
 import { MassSpringHairCardSystem } from './SpringMassSystem.js';
 
-let numberOfParticles = 7;
+let numberOfParticles = 5;  //is one more
 
 export class HairCard {
     mesh = null;
@@ -11,7 +11,7 @@ export class HairCard {
 
     
 
-    constructor(mesh, system, initWPos, skullIndex = 0) {
+    constructor(mesh = null, system = null, initWPos = null, skullIndex = 0) {
         this.mesh = mesh;
         this.system = system;
         this.initWPos = initWPos;
@@ -50,21 +50,25 @@ export class HairCard {
         let position = mesh.geometry.getAttribute('position')
         let initWPos = [];
         let localOffsets = [];
-        // change to world position
-        for (let i = 0; i < position.count; i++) {
-            let vertex = new THREE.Vector3();
-            vertex.fromBufferAttribute(position, i);
-            initWPos.push(mesh.localToWorld(vertex));
-        }
 
-        for(let i = 0; i < position.count; i+=2)
-        {
+        
+        // change to world position
+        for (let i = 0; i < position.count; i+=2) {
             let vertex = new THREE.Vector3();
             vertex.fromBufferAttribute(position, i);
+            let worldPos = mesh.localToWorld(vertex);
 
             let vertex2 = new THREE.Vector3();
             vertex2.fromBufferAttribute(position, i + 1);
+            let worldPos2 = mesh.localToWorld(vertex2);
 
+            // get init World Position of the control hair
+            worldPos.add(worldPos2);
+            worldPos.divideScalar(2);
+            //initWPos.push(worldPos);
+            
+
+            // get local offset
             var offset = [0,0,0]
 
             offset[0] = vertex2.x - vertex.x;
@@ -72,6 +76,7 @@ export class HairCard {
             offset[2] = vertex2.z - vertex.z;
 
             localOffsets.push(offset);
+            initWPos.push(worldPos)
         }
 
         return { system: new MassSpringHairCardSystem(initWPos, localOffsets, options), initWPos: initWPos };
@@ -185,15 +190,18 @@ export class HairCard {
         }
     }
 
-    restart(options, worldPos)
+    restart(options)
     {
-        this.system = new MassSpringHairCardSystem(this.initWPos, options);
-        this.system.setAnchor([worldPos.x, worldPos.y, worldPos.z]);
+        this.system.restart(options, this.initWPos);
     }
 
     rotateCard(rad){
         this.mesh.rotation.y += rad;
         this.mesh.updateMatrixWorld();
+    }
+
+    setParams(options){
+        this.system.setParams(options);
     }
 }
 
@@ -201,6 +209,7 @@ export class CollisionSphere {
     mesh = null;
     center;     //center position vec3
     radius;
+    initWPos;
 
     constructor(center = [0,0,0], radius = 1.0){
         this.center = [...center]
@@ -212,6 +221,8 @@ export class CollisionSphere {
 
         this.mesh.position.set(center[0], center[1], center[2]);
         this.mesh.updateMatrixWorld();
+
+        this.initWPos = [...center];
     }
 
     addToScene(scene){
@@ -220,6 +231,15 @@ export class CollisionSphere {
 
     setVisible(bool){
         this.mesh.visible = bool;
+    }
+
+    restart(){
+        this.setPosition(this.initWPos[0], this.initWPos[1], this.initWPos[2]);
+    }
+
+    setPosition(x,y,z){
+        this.mesh.position.set(x,y,z);
+        this.center = [x, y, z];
     }
 }
 
@@ -259,7 +279,7 @@ export class Head {
             normal.fromBufferAttribute(normals, index);
             let worldNorm = this.skull.localToWorld(normal);
 
-            let hairCard = new HairCard(null, null, null);
+            let hairCard = new HairCard();
             hairCard.initHairSystem(index, worldPos, options, worldNorm, this.collisionSpheres);
             this.hairCards.push(hairCard);
 
@@ -318,18 +338,15 @@ export class Head {
     }
 
     restart = (options) => {
-        this.moveSkull(this.initPosition[0], this.initPosition[1], this.initPosition[2]);
-
-        for (let i = 0; i < this.hairCards.length; i++) {
-            let position = this.skull.geometry.getAttribute('position');
-
-            let vertex = new THREE.Vector3();
-            let index =  this.hairCards[i].skullIndex;
-            vertex.fromBufferAttribute(position, index);
-            let worldPos = this.skull.localToWorld(vertex);
-
-            this.hairCards[i].restart(options, worldPos); 
-        }
+        this.skull.position.set(this.initPosition[0], this.initPosition[1], this.initPosition[2]);
+        
+        for(let i = 0; i < this.collisionSpheres.length; i++)
+            this.collisionSpheres[i].restart();
+        
+        
+        for (let i = 0; i < this.hairCards.length; i++)
+            this.hairCards[i].restart(options); 
+        
     };
 
     moveSkull = (dx, dy, dz) => {
@@ -420,5 +437,12 @@ export class Head {
             this.hairCards[i].changeMode(mode);
 
         }
-     }
+    }
+
+    setParams(options){
+        for (let i = 0; i < this.hairCards.length; i++) {
+            this.hairCards[i].setParams(options);
+        }
+    }
+     
 }
