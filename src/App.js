@@ -5,6 +5,8 @@ import { GUI } from 'https://cdn.skypack.dev/lil-gui';
 
 import { SpringMassSystem1D, SpringMassSystem2D, MultipleSpringMassSystem, MassSpringHairCardSystem, modes } from './SpringMassSystem.js';
 import { Head, HairCard, CollisionSphere } from './model.js'
+import { InputManager } from './input.js';
+
 
 let initPlanePos = new THREE.Vector3(0, 1.5, 0);
 
@@ -88,8 +90,8 @@ export class App {
         // Set listeners and events
         window.addEventListener('resize', this.onWindowResize.bind(this));
         window.addEventListener('click', this.onClick);
-        document.onkeydown = (e) => { this.onKey(e, true); };
-        document.onkeyup = (e) => { this.onKey(e, false); }
+        document.onkeydown = (e) => { InputManager.onKey(e, true); };
+        document.onkeyup = (e) => { InputManager.onKey(e, false); }
 
         this.modeIndeces = {
             MassSpring: 0,
@@ -98,7 +100,7 @@ export class App {
             Head: 3
         }
 
-        this.currentModeIndex = this.modeIndeces.MassSpring;
+        this.currentModeIndex = this.modeIndeces.HairCard;
         //this.currentSystemMode = modes.inextensible;
 
         this.modes = [];
@@ -109,30 +111,39 @@ export class App {
             k: 100,
             gravity: -10.0,
             mass: 0.02,
+            d: 0.02,
             set: () => { this.set() },
             restart: () => { this.restart() },
             mode: this.currentModeIndex,
             systemMode: modes.inextensible,
             showControlHairs: false,
             showCollisionSpheres: true,
-            applyPhysics: false,
+            applyPhysics: true,
         };
 
-        let gui = new GUI().title('Evaluate Dataset Options');
-        gui.add(this.options, 'mode', this.modeIndeces).name('Mode');
-        gui.add(this.options, 'systemMode', modes).name('System Mode');
-        gui.add(this.options, 'damping', 0.01, 1000).name('Damping');
-        gui.add(this.options, 'k', 0.01, 1000).name('K');
-        gui.add(this.options, 'gravity', -100, 0).name('Gravity');
-        gui.add(this.options, 'mass', 0, 100).name('Mass');
-        gui.add(this.options, 'showControlHairs').name('Show Control Hairs');
-        gui.add(this.options, 'showCollisionSpheres').name('Show Collision Spheres');        
-        gui.add(this.options, 'applyPhysics').name('Apply Physics');
+        this.gui = new GUI().title('Simulation Parameters');
+        this.gui.add(this.options, 'mode', this.modeIndeces).name('Mode');
+        this.gui.add(this.options, 'systemMode', modes).name('System Mode');
+        this.gui.add(this.options, 'damping', 0.01, 1000).name('Damping');
+        this.gui.add(this.options, 'k', 0.01, 1000).name('K');
+        this.gui.add(this.options, 'gravity', -100, 0).name('Gravity');
+        this.gui.add(this.options, 'mass', 0, 100).name('Mass');
+        this.gui.add(this.options, 'd', 0.001, 1).name('Particle Distance');
 
-        gui.add(this.options, 'set').name('Set params');
-        gui.add(this.options, 'restart').name('Restart demo');
+        this.gui.add(this.options, 'applyPhysics').name('Apply Physics');
 
-        gui.onChange(this.onGUI);
+        
+
+        this.gui.onChange(this.onGUI);
+
+        let folder = this.gui.addFolder('Visibility');
+
+        this.gui.add(this.options, 'set').name('Set params');
+        this.gui.add(this.options, 'restart').name('Restart demo');
+        
+        folder.add(this.options, 'showControlHairs').name('Show Control Hairs');
+        folder.add(this.options, 'showCollisionSpheres').name('Show Collision Spheres'); 
+        folder.show(this.modeIndeces.MassSpring != this.options.mode);
 
         // init models
         this.initOnlyMassSpringSystem();
@@ -149,30 +160,7 @@ export class App {
         this.animate();
     };
 
-    onKey(e, bool) {
-        if (e.code === 'KeyW')
-            this.isKeyW = bool;
-
-        else if (e.code === 'KeyS')
-            this.isKeyS = bool;
-
-        else if (e.code === 'KeyA')
-            this.isKeyA = bool;
-
-        else if (e.code === 'KeyD')
-            this.isKeyD = bool;
-
-        else if (e.code === 'KeyQ')
-            this.isKeyQ = bool;
-
-        else if (e.code === 'KeyE')
-            this.isKeyE = bool;
-
-        else if (e.code === 'Space')
-            this.isSpace = bool;
-
-    }
-
+    
     onClick = (event) => {
         // calculate normalized mouse coordinates (-1 to +1)
 
@@ -259,18 +247,29 @@ export class App {
 
         if (event.property === 'systemMode') {
             this.modes[this.currentModeIndex].changeMode(event.value);
+            
+            
+            let controller = this.gui.controllers
+            for(let i = 0; controller.length; i++)
+            {
+                if(controller[i].property === "d" )
+                    controller[i].show(modes.inextensible == event.value);
+
+            }
+            //event.controller.show(modes.inextensible == event.value);
+
         }
 
 
         if (event.property === 'mode') {
+            this.gui.folders[0].show(this.modeIndeces.MassSpring != event.value);
             this.updateMode();
         }
         
-
     }
 
     initOnlyMassSpringSystem() {
-        var length = 9;
+        var length = 6;
         this.modes[this.modeIndeces.MassSpring] = new MultipleSpringMassSystem(length, this.options);
         this.modes[this.modeIndeces.MassSpring].addToScene(this.scene);
         this.modes[this.modeIndeces.MassSpring].setVisible(this.currentModeIndex == this.modeIndeces.MassSpring);
@@ -279,7 +278,7 @@ export class App {
     initOnlyOnePlaneSytem() {
 
         let collision = new CollisionSphere([0, 1.4, 0.2], 0.05);
-        collision.mesh.visible = false;
+        collision.mesh.visible = this.currentModeIndex == this.modeIndeces.HairCard && this.options.showCollisionSpheres;
         this.modes[this.modeIndeces.HairCard] = new HairCard();
         this.modes[this.modeIndeces.HairCard].initHairSystem(0, initPlanePos, this.options, null, [collision]);
         
@@ -287,7 +286,7 @@ export class App {
         this.scene.add(collision.mesh);
         this.modes[this.modeIndeces.HairCard].addToScene(this.scene);
         this.modes[this.modeIndeces.HairCard].setVisible(this.currentModeIndex == this.modeIndeces.HairCard);
-        this.modes[this.modeIndeces.HairCard].showControlHairs(this.options.showControlHairs);
+        this.modes[this.modeIndeces.HairCard].showControlHairs(this.currentModeIndex == this.modeIndeces.HairCard && this.options.showControlHairs);
     };
 
     initHead() {
@@ -328,7 +327,7 @@ export class App {
 
             this.modes[this.modeIndeces.Head].addToScene(this.scene);
             this.modes[this.modeIndeces.Head].setVisible(this.currentModeIndex == this.modeIndeces.Head);
-            this.modes[this.modeIndeces.Head].showControlHairs(this.options.showControlHairs);
+            this.modes[this.modeIndeces.Head].showControlHairs(this.currentModeIndex == this.modeIndeces.Head && this.options.showControlHairs);
             this.modes[this.modeIndeces.Head].showCollisionSpheres(this.currentModeIndex == this.modeIndeces.Head && this.options.showCollisionSpheres);
 
             
@@ -381,26 +380,15 @@ export class App {
     }
 
     update(delta) {
+        let model = this.modes[this.currentModeIndex];
 
-        if (this.currentModeIndex == this.modeIndeces.MassSpring && this.modes[this.modeIndeces.MassSpring]) {
-            this.modes[this.modeIndeces.MassSpring].update(delta);
-            this.updateSystemPosition(delta)
+        if (!model)
+            return;
+
+        if (this.options.applyPhysics) {
+            model.update(delta);
         }
-
-
-        if (this.currentModeIndex == this.modeIndeces.HairCard && this.modes[this.modeIndeces.HairCard]) {
-            this.modes[this.modeIndeces.HairCard].updateHairCardSystem(delta);
-            this.updatePositionCard(delta);
-        }
-
-
-        else if (this.currentModeIndex == this.modeIndeces.Head && this.modes[this.modeIndeces.Head]) {
-
-            if (this.options.applyPhysics) {
-                this.modes[this.modeIndeces.Head].updateSystem(delta);
-                this.updatePosition(delta);
-            }
-        }
+        
 
     };
 
@@ -451,93 +439,9 @@ export class App {
         this.currentModeIndex = this.options.mode;
     }
 
-    updatePosition(delta) {  // TODO put it in model?
-        let model = this.modes[this.currentModeIndex];
-        if (model == null)
-            return;
+    
 
-        let tt = delta * 0.2;
-        if (this.isKeyQ) {
-            model.moveSkull(0, tt, 0);
-        }
-        if (this.isKeyE) {
-            model.moveSkull(0, - tt, 0);
-        }
-        if (this.isKeyA) {
-            model.moveSkull(- tt, 0, 0);
-        }
-        if (this.isKeyD) {
-            model.moveSkull( tt, 0, 0);
-        }
-        if (this.isKeyS) {
-            model.moveSkull(0, 0, tt);
-        }
-        if (this.isKeyW) {
-            model.moveSkull(0, 0, - tt);
-        }
-        if (this.isSpace) {
-            model.rotateSkull(delta * 1.5);
-        }
-
-    }
-
-    updatePositionCard(delta) {
-        let model = this.currentModeIndex == this.modeIndeces.HairCard ? this.modes[this.modeIndeces.HairCard] : null;
-        if (model == null)
-        return;
-
-        let position = model.system.particles[0].position;
-        let tt = delta * 0.2;
-        if (this.isKeyQ) {
-            model.setPosition(position[0], position[1] + tt, position[2]);
-        }
-        if (this.isKeyE) {
-            model.setPosition(position[0], position[1] - tt, position[2]);
-        }
-        if (this.isKeyW) {
-            model.setPosition(position[0], position[1], position[2] - tt);
-        }
-        if (this.isKeyS) {
-            model.setPosition(position[0], position[1], position[2] + tt);
-        }
-        if (this.isKeyA) {
-            model.setPosition(position[0] - tt, position[1], position[2]);
-        }
-        if (this.isKeyD) {
-            model.setPosition(position[0] + tt, position[1], position[2]);
-        }
-
-        if (this.isSpace) {
-            this.modes[this.modeIndeces.HairCard].rotateCard(delta);
-        }
-    }
-
-    updateSystemPosition(delta) {
-        let model = this.currentModeIndex == this.modeIndeces.MassSpring ? this.modes[this.modeIndeces.MassSpring] : null;
-        if (model == null)
-            return;
-
-        let position = model.particles[0].position;
-        let tt = delta * 0.2;
-        if (this.isKeyQ) {
-            model.setAnchor(position.x, position.y + tt, position.z);
-        }
-        if (this.isKeyE) {
-            model.setAnchor(position.x, position.y - tt, position.z);
-        }
-        if (this.isKeyW) {
-            model.setAnchor(position.x, position.y, position.z - tt);
-        }
-        if (this.isKeyS) {
-            model.setAnchor(position.x, position.y, position.z + tt);
-        }
-        if (this.isKeyA) {
-            model.setAnchor(position.x - tt, position.y, position.z);
-        }
-        if (this.isKeyD) {
-            model.setAnchor(position.x + tt, position.y, position.z);
-        }
-
-    }
+   
+    
 
 }

@@ -1,5 +1,6 @@
 import * as THREE from 'https://cdn.skypack.dev/three@0.136';
 import { MassSpringHairCardSystem } from './SpringMassSystem.js';
+import { InputManager } from './input.js';
 
 let numberOfParticles = 5;  //is one more
 
@@ -8,8 +9,6 @@ export class HairCard {
     system = null;
     initWPos = [];
     skullIndex = null;
-
-    
 
     constructor(mesh = null, system = null, initWPos = null, skullIndex = 0) {
         this.mesh = mesh;
@@ -27,7 +26,7 @@ export class HairCard {
     }
 
     showControlHairs = (bool) => {
-        this.system.showLines(bool);
+        this.system.showControlHair(bool);
     }
 
     changeMode(mode){
@@ -74,6 +73,7 @@ export class HairCard {
             offset[0] = vertex2.x - vertex.x;
             offset[1] = vertex2.y - vertex.y;
             offset[2] = vertex2.z - vertex.z;
+
 
             localOffsets.push(offset);
             initWPos.push(worldPos)
@@ -170,7 +170,7 @@ export class HairCard {
     }
 
     updateHairCardSystem(delta) {
-        this.system.update(delta);
+        this.system.updateSystem(delta);
         //console.log(system.particles[1])
         for (var i = 0; i < this.system.particles.length; i++) {
             // Access the geometry data of the model
@@ -203,6 +203,40 @@ export class HairCard {
     setParams(options){
         this.system.setParams(options);
     }
+
+    update(delta){
+        this.updatePositionCard(delta);
+        this.updateHairCardSystem(delta);
+    }
+
+    updatePositionCard(delta) {
+        
+        let position = this.system.particles[0].position;
+        let tt = delta * 0.2;
+        if (InputManager.isKeyQ) {
+            this.setPosition(position[0], position[1] + tt, position[2]);
+        }
+        if (InputManager.isKeyE) {
+            this.setPosition(position[0], position[1] - tt, position[2]);
+        }
+        if (InputManager.isKeyW) {
+            this.setPosition(position[0], position[1], position[2] - tt);
+        }
+        if (InputManager.isKeyS) {
+            this.setPosition(position[0], position[1], position[2] + tt);
+        }
+        if (InputManager.isKeyA) {
+            this.setPosition(position[0] - tt, position[1], position[2]);
+        }
+        if (InputManager.isKeyD) {
+            this.setPosition(position[0] + tt, position[1], position[2]);
+        }
+
+        if (InputManager.isSpace) {
+            this.modes[this.modeIndeces.HairCard].rotateCard(delta);
+        }
+    }
+
 }
 
 export class CollisionSphere {
@@ -297,7 +331,6 @@ export class Head {
         // this.headSystem.add(cs.mesh);
 
     }
-   
 
     addToScene = (scene) => {
        // TRY GROUP
@@ -317,37 +350,40 @@ export class Head {
 
     }
 
-    updateHairCardsPos = () => {
-        let position = this.skull.geometry.getAttribute('position');
-
-        for (let i = 0; i < this.hairCards.length; i++) {
-            let vertex = new THREE.Vector3();
-            let index = this.hairCards[i].skullIndex;
-            vertex.fromBufferAttribute(position, index);
-            let worldPos = this.skull.localToWorld(vertex);
-
-            this.hairCards[i].setPosition(worldPos.x, worldPos.y, worldPos.z);
-        }
-    };
-
-    updateSystem = (delta) => {
+    update = (delta) => {
+        this.updateSkullPosition(delta);
         for (let i = 0; i < this.hairCards.length; i++) {
             this.hairCards[i].updateHairCardSystem(delta);
         }
 
     }
 
-    restart = (options) => {
-        this.skull.position.set(this.initPosition[0], this.initPosition[1], this.initPosition[2]);
-        
-        for(let i = 0; i < this.collisionSpheres.length; i++)
-            this.collisionSpheres[i].restart();
-        
-        
-        for (let i = 0; i < this.hairCards.length; i++)
-            this.hairCards[i].restart(options); 
-        
-    };
+    updateSkullPosition(delta) {  
+       
+        let tt = delta * 0.2;
+        if (InputManager.isKeyQ) {
+            this.moveSkull(0, tt, 0);
+        }
+        if (InputManager.isKeyE) {
+            this.moveSkull(0, - tt, 0);
+        }
+        if (InputManager.isKeyA) {
+            this.moveSkull(- tt, 0, 0);
+        }
+        if (InputManager.isKeyD) {
+            this.moveSkull( tt, 0, 0);
+        }
+        if (InputManager.isKeyS) {
+            this.moveSkull(0, 0, tt);
+        }
+        if (InputManager.isKeyW) {
+            this.moveSkull(0, 0, - tt);
+        }
+        if (InputManager.isSpace) {
+            this.rotateSkull(delta * 1.5);
+        }
+
+    }
 
     moveSkull = (dx, dy, dz) => {
         // TRY GROUP
@@ -376,6 +412,34 @@ export class Head {
         }
     }
 
+    updateHairCardsPos = () => {
+        let position = this.skull.geometry.getAttribute('position');
+
+        for (let i = 0; i < this.hairCards.length; i++) {
+            let vertex = new THREE.Vector3();
+            let index = this.hairCards[i].skullIndex;
+            vertex.fromBufferAttribute(position, index);
+            let worldPos = this.skull.localToWorld(vertex);
+
+            this.hairCards[i].setPosition(worldPos.x, worldPos.y, worldPos.z);
+        }
+    };
+    
+
+    restart = (options) => {
+        this.skull.position.set(this.initPosition[0], this.initPosition[1], this.initPosition[2]);
+        
+        for(let i = 0; i < this.collisionSpheres.length; i++)
+            this.collisionSpheres[i].restart();
+        
+        
+        for (let i = 0; i < this.hairCards.length; i++)
+            this.hairCards[i].restart(options); 
+        
+    };
+
+    
+    /*
     updateCollisionSphere = () => {
         for (let i = 0; i < this.collisionSpheres.length; i++){
             
@@ -391,6 +455,7 @@ export class Head {
            
         }
     }
+    */
 
     rotateSkull = (rad) => {
         
@@ -444,5 +509,7 @@ export class Head {
             this.hairCards[i].setParams(options);
         }
     }
+
+    
      
 }

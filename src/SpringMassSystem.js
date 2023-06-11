@@ -1,4 +1,5 @@
 import * as THREE from 'https://cdn.skypack.dev/three@0.136';
+import { InputManager } from './input.js';
 
 
 var gravity = -9.81;
@@ -182,18 +183,19 @@ export class MultipleSpringMassSystem {
     damping = 100;
     k = 800;
     gravity = -9.98;
-
+    d = 0.05;
     mode = modes.inextensible;
 
     restDistance = 0.5;
 
     
-    constructor(length=1, {damping, k, gravity, mass}) {
+    constructor(length=1, {damping, k, gravity, mass, d}) {
 
         this.mass = mass;
         this.damping = damping;
         this.k = k;
         this.gravity = gravity;
+        this.d = d;
         //this.velocity = [0, 0];
 
         //this.anchor = createAnchor();
@@ -236,11 +238,12 @@ export class MultipleSpringMassSystem {
         }
     }
 
-    setParams({damping, k, gravity, mass}){
+    setParams({damping, k, gravity, mass, d}){
         this.mass = mass;
         this.damping = damping;
         this.k = k;
         this.gravity = gravity;
+        this.d = d;
     };
 
     setVisible( bool ){
@@ -254,7 +257,37 @@ export class MultipleSpringMassSystem {
         this.particles[0].position.set(x,y,z);
     }
 
-    update(delta) {
+    update(delta){
+        this.updateSystemPosition(delta);
+        this.updateSystem(delta);
+    }
+
+    updateSystemPosition(delta) {
+
+        let position = this.particles[0].position;
+        let tt = delta * 0.2;
+        if (InputManager.isKeyQ) {
+            this.setAnchor(position.x, position.y + tt, position.z);
+        }
+        if (InputManager.isKeyE) {
+            this.setAnchor(position.x, position.y - tt, position.z);
+        }
+        if (InputManager.isKeyW) {
+            this.setAnchor(position.x, position.y, position.z - tt);
+        }
+        if (InputManager.isKeyS) {
+            this.setAnchor(position.x, position.y, position.z + tt);
+        }
+        if (InputManager.isKeyA) {
+            this.setAnchor(position.x - tt, position.y, position.z);
+        }
+        if (InputManager.isKeyD) {
+            this.setAnchor(position.x + tt, position.y, position.z);
+        }
+
+    }
+
+    updateSystem(delta) {
         //
         if (this.mode == modes.massSpring)
             this.updateMassSpringSystem(delta)
@@ -322,16 +355,16 @@ export class MultipleSpringMassSystem {
 
             // FORCE CALCULATIONS
             var endPos = this.particles[j-1].position;
-            let d = 0.1;
+            //let d = 0.1;
             
             let vec1 = [ position1.x - endPos.x , position1.y - endPos.y, position1.z - endPos.z ];
             let dist1 = lengthVec3(vec1);
-            let x = (dist1 != 0) ? [(dist1 - d) * vec1[0] / dist1, (dist1 - d) * vec1[1] / dist1, (dist1 - d) * vec1[2] / dist1]  : [0,0,0];
+            let x = (dist1 != 0) ? [(dist1 - this.d) * vec1[0] / dist1, (dist1 - this.d) * vec1[1] / dist1, (dist1 - this.d) * vec1[2] / dist1]  : [0,0,0];
             var springForce1 = [-this.k*0.5*x[0], -this.k*0.5*x[1], -this.k*0.5*x[2]];
             normalizeVec3(vec1);
             let cos1 = scalarPorductVec3([0,1,0], vec1);
             cos1 = (cos1 == 1) ? cos1 : 0;
-            springForce1 = (dist1 > d ) ? springForce1 : [springForce1[0], springForce1[1] + this.mass * this.gravity * cos1, springForce1[2]];
+            springForce1 = (dist1 > this.d ) ? springForce1 : [springForce1[0], springForce1[1] + this.mass * this.gravity * cos1, springForce1[2]];
             
             
             var dampingForce1 = [ this.damping * velocity1[0], this.damping * velocity1[1], this.damping * velocity1[2] ];
@@ -339,12 +372,12 @@ export class MultipleSpringMassSystem {
 
             // let vec2 = [ position2.x - position1.x , position2.y - position1.y, position2.z - position1.z ];
             // let dist2 = lengthVec3(vec2);
-            // x = (dist2 != 0) ? [(dist2 - d) * vec2[0] / dist2, (dist2 - d) * vec2[1] / dist2, (dist2 - d) * vec2[2] / dist2]  : [0,0,0];
+            // x = (dist2 != 0) ? [(dist2 - this.d) * vec2[0] / dist2, (dist2 - this.d) * vec2[1] / dist2, (dist2 - this.d) * vec2[2] / dist2]  : [0,0,0];
             // var springForce2 = [-this.k*0.5*x[0], -this.k*0.5*x[1], -this.k*0.5*x[2]];
             // normalizeVec3(vec2);
             // let cos2 = scalarPorductVec3([0,1,0], vec2);
             // cos2 = (cos2 > 0) ? cos2 : 0;
-            // springForce2 = (dist2 > d ) ? springForce2 : [springForce2[0], springForce2[1] + this.mass * this.gravity * cos2, springForce2[2]];
+            // springForce2 = (dist2 > this.d ) ? springForce2 : [springForce2[0], springForce2[1] + this.mass * this.gravity * cos2, springForce2[2]];
 
             // var dampingForce2 = [ this.damping * velocity2[0], this.damping * velocity2[1],this.damping * velocity2[2]];
             // //var dampingForce2 = [0,0,0];
@@ -410,7 +443,7 @@ export class MassSpringHairCardSystem {
     k = 800;
     gravity = -9.98;
     mass = 20;
-    d = 0.03;
+    d = 0.01;
 
     particles = [];
     lines = [];
@@ -418,12 +451,16 @@ export class MassSpringHairCardSystem {
     mode = modes.inextensible;
     collisionSpheres = null;
 
-    constructor(position, localOffsets, {damping, k, gravity, mass}) {
+    isShowControlHair = false;
+
+
+    constructor(position, localOffsets, {damping, k, gravity, mass, d}) {
 
         this.mass = mass;
         this.damping = damping;
         this.k = k;
         this.gravity = gravity;
+        this.d = d;
 
         for(var i = 0; i < position.length; i++){
             // init particles
@@ -453,18 +490,21 @@ export class MassSpringHairCardSystem {
         //this.particles[0].position.set(-3, 3, 0);
     };
 
-    setParams({damping, k, gravity, mass}){
+    setParams({damping, k, gravity, mass, d}){
         this.mass = mass;
         this.damping = damping;
         this.k = k;
         this.gravity = gravity;
+        this.d = d;
     }
 
     restart(options, particlePos){
         this.setParams(options);
+        
         for(var j = 0; j < this.particles.length; j++){
             this.particles[j].position = [...particlePos[j]];
             this.particles[j].velocity = [0,0,0];
+            this.particles[j].mesh.position.set(particlePos[0], particlePos[1], particlePos[2]);
         }
     }
 
@@ -481,8 +521,37 @@ export class MassSpringHairCardSystem {
         this.particles[0].mesh.position.z = position[2];
     }
 
+    update(delta){
+        this.updateSystemPosition(delta);
+        this.updateSystem(delta);
+    }
 
-    update(delta) {
+    updateSystemPosition(delta) {
+
+        let position = this.particles[0].position;
+        let tt = delta * 0.2;
+        if (InputManager.isKeyQ) {
+            this.setAnchor(position.x, position.y + tt, position.z);
+        }
+        if (InputManager.isKeyE) {
+            this.setAnchor(position.x, position.y - tt, position.z);
+        }
+        if (InputManager.isKeyW) {
+            this.setAnchor(position.x, position.y, position.z - tt);
+        }
+        if (InputManager.isKeyS) {
+            this.setAnchor(position.x, position.y, position.z + tt);
+        }
+        if (InputManager.isKeyA) {
+            this.setAnchor(position.x - tt, position.y, position.z);
+        }
+        if (InputManager.isKeyD) {
+            this.setAnchor(position.x + tt, position.y, position.z);
+        }
+
+    }
+
+    updateSystem(delta) {
         //
         if (this.mode == modes.massSpring)
             this.updateMassSpringSystem(delta);
@@ -530,16 +599,8 @@ export class MassSpringHairCardSystem {
             this.particles[j].velocity[1] = velocity[1];
             this.particles[j].velocity[2] = velocity[2];
 
-              
-            // Update line
-            let start = new THREE.Vector3(this.particles[j].position[0], this.particles[j].position[1], this.particles[j].position[2]);
-            let end = new THREE.Vector3(endPos[0], endPos[1], endPos[2]);
-            this.lines[j - 1].geometry.setFromPoints([start, end]);
-
-            // update mesh particle position 
-            this.particles[j].mesh.position.x = position[0] ;
-            this.particles[j].mesh.position.y = position[1] ;
-            this.particles[j].mesh.position.z = position[2];
+            if (this.isShowControlHair)
+                this.updateControlHair(j, position, endPos);
            
         }
     }
@@ -607,17 +668,24 @@ export class MassSpringHairCardSystem {
             this.particles[j].velocity[2] = velocity[2];
 
               
-            // Update line
-            let start = new THREE.Vector3(this.particles[j].position[0], this.particles[j].position[1], this.particles[j].position[2]);
-            let end = new THREE.Vector3(endPos[0], endPos[1], endPos[2]);
-            this.lines[j - 1].geometry.setFromPoints([start, end]);
-
-            // update mesh particle position 
-            this.particles[j].mesh.position.x = position[0] ;
-            this.particles[j].mesh.position.y = position[1] ;
-            this.particles[j].mesh.position.z = position[2];
+            if (this.isShowControlHair)
+                this.updateControlHair(j, position, endPos);
            
         }
+    }
+
+    updateControlHair(j, position, endPos)
+    {
+         // Update line
+         let start = new THREE.Vector3(position[0], position[1], position[2]);
+         let end = new THREE.Vector3(endPos[0], endPos[1], endPos[2]);
+         this.lines[j - 1].geometry.setFromPoints([start, end]);
+
+         // update mesh particle position 
+         this.particles[j].mesh.position.x = position[0] ;
+         this.particles[j].mesh.position.y = position[1] ;
+         this.particles[j].mesh.position.z = position[2];
+        
     }
 
      /*
@@ -755,7 +823,8 @@ export class MassSpringHairCardSystem {
 
     }
 
-    showLines( bool ){
+    showControlHair( bool ){
+        this.isShowControlHair = bool;
         for (let i = 0; i < this.lines.length; i++ ){
             this.lines[i].visible = bool;
         }
