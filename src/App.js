@@ -100,7 +100,7 @@ export class App {
             Head: 3
         }
 
-        this.currentModeIndex = this.modeIndeces.HairCard;
+        this.currentModeIndex = this.modeIndeces.Head;
         //this.currentSystemMode = modes.inextensible;
 
         this.modes = [];
@@ -118,7 +118,8 @@ export class App {
             systemMode: modes.inextensible,
             showControlHairs: false,
             showCollisionSpheres: true,
-            applyPhysics: true,
+            applyPhysics: false,
+            wareframe: true
         };
 
         this.gui = new GUI().title('Simulation Parameters');
@@ -143,6 +144,8 @@ export class App {
         
         folder.add(this.options, 'showControlHairs').name('Show Control Hairs');
         folder.add(this.options, 'showCollisionSpheres').name('Show Collision Spheres'); 
+        folder.add(this.options, 'wareframe').name('Wareframe'); 
+
         folder.show(this.modeIndeces.MassSpring != this.options.mode);
 
         // init models
@@ -250,7 +253,7 @@ export class App {
             
             
             let controller = this.gui.controllers
-            for(let i = 0; controller.length; i++)
+            for(let i = 0; i < controller.length; i++)
             {
                 if(controller[i].property === "d" )
                     controller[i].show(modes.inextensible == event.value);
@@ -264,7 +267,22 @@ export class App {
         if (event.property === 'mode') {
             this.gui.folders[0].show(this.modeIndeces.MassSpring != event.value);
             this.updateMode();
+            
+            let controller = this.gui.folders[0].controllers
+
+            for(let i = 0; i < controller.length; i++)
+            {
+                if(controller[i].property === "wareframe" )
+                    controller[i].show(event.value == this.modeIndeces.Head);
+
+            }
+            
+
         }
+
+        if (event.property === 'wareframe') 
+            this.modes[this.modeIndeces.Head].skull.material.wireframe = event.value;
+
         
     }
 
@@ -313,9 +331,16 @@ export class App {
 
             // init hair cards
             //let indeces = [1500, 1510, 662, 1544, 631];
-            let indeces = [1500, 1510, 662, 1544, 631, 634, 660, 659,652, 644, 678, 641, 1540,1524, 1536, 611, 600, 658, 1536, 1533, 604, 621, 497, 648, 1530, 2546, 1535, 1389, 1528, 1555];
+            //let indeces = [1500, 1510, 662, 1544, 631, 634, 660, 659,652, 644, 678, 641, 1540,1524, 1536, 611, 600, 658, 1536, 1533, 604, 621, 497, 648, 1530, 2546, 1535, 1389, 1528, 1555];
             let pos = [0, 0, 0];
+            let indeces = [];
             this.modes[this.modeIndeces.Head] = new Head(head, indeces, this.options, pos);
+
+            let normal = new THREE.Vector3(0,1.2,-1);
+            let D = 1.8852;
+            //this.createPlane(normal, D);
+
+            this.modes[this.modeIndeces.Head].addHairCardsFromPlane(normal, D, this.options);
 
             //init collision spheres
             let radius = [0.082, 0.045];
@@ -332,6 +357,20 @@ export class App {
 
             
         });
+    }
+
+    createPlane(normal, D){
+        let width = 5;
+        let height = 5;
+        const planeGeometry = new THREE.PlaneGeometry(width, height, 1, 1);
+        planeGeometry.lookAt(normal);
+        planeGeometry.translate(0, D/normal.y, 0);
+        
+        //const cardMaterial = new THREE.MeshBasicMaterial({ color: 0xffff00, side: THREE.DoubleSide });
+
+        let material = new THREE.MeshStandardMaterial({ color: "red", side: THREE.DoubleSide});
+        let plane = new THREE.Mesh(planeGeometry, material);
+        this.scene.add(plane);
     }
 
     set() {
@@ -366,8 +405,8 @@ export class App {
         requestAnimationFrame(this.animate.bind(this));
 
         let delta = this.clock.getDelta();
-        if (delta > 0.05)
-            delta = 0.05;
+        if (delta > 0.03)
+            delta = 0.03;
         this.accumulator += delta;
 
         while (this.accumulator >= this.dt) {

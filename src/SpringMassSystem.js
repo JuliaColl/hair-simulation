@@ -22,7 +22,7 @@ function normalizeVec3(v){
     v[2] /= length;
 }
 
-function scalarPorductVec3( v, u){
+export function scalarPorductVec3( v, u){
     return v[0]*u[0] + v[1]*u[1] + v[2]*u[2];
 }
 

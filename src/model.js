@@ -1,5 +1,5 @@
 import * as THREE from 'https://cdn.skypack.dev/three@0.136';
-import { MassSpringHairCardSystem } from './SpringMassSystem.js';
+import { MassSpringHairCardSystem, scalarPorductVec3 } from './SpringMassSystem.js';
 import { InputManager } from './input.js';
 
 let numberOfParticles = 5;  //is one more
@@ -295,32 +295,56 @@ export class Head {
 
         this.initPosition = [...wPos];
 
-        let position = this.skull.geometry.getAttribute('position');
-        let normals = this.skull.geometry.getAttribute('normal');
-
         let numOfHairCards = indeces.length;
         for (let i = 0; i < numOfHairCards; i++) {
-            let vertex = new THREE.Vector3();
-
-            let index = indeces[i];
-
-            //world position
-            vertex.fromBufferAttribute(position, index);
-            let worldPos = this.skull.localToWorld(vertex);
-
-            // normal
-            let normal = new THREE.Vector3();
-            normal.fromBufferAttribute(normals, index);
-            let worldNorm = this.skull.localToWorld(normal);
-
-            let hairCard = new HairCard();
-            hairCard.initHairSystem(index, worldPos, options, worldNorm, this.collisionSpheres);
-            this.hairCards.push(hairCard);
-
+            this.addHairCard(indeces[i], options);
             // TRY GROUP
             // this.headSystem = new THREE.Group();
             // this.headSystem.add(this.skull);
         }
+    }
+
+    addHairCard = (index, options) => {
+        let position = this.skull.geometry.getAttribute('position');
+        let normals = this.skull.geometry.getAttribute('normal');
+
+        let vertex = new THREE.Vector3();
+
+        //world position
+        vertex.fromBufferAttribute(position, index);
+        let worldPos = this.skull.localToWorld(vertex);
+
+        // normal
+        let normal = new THREE.Vector3();
+        normal.fromBufferAttribute(normals, index);
+        let worldNorm = this.skull.localToWorld(normal);
+
+        let hairCard = new HairCard();
+        hairCard.initHairSystem(index, worldPos, options, worldNorm, this.collisionSpheres);
+        this.hairCards.push(hairCard);
+
+    }
+
+    addHairCardsFromPlane = (normalVector, D, options) => {
+        let position = this.skull.geometry.getAttribute('position');
+        let count = 0;
+
+        for(let i = 0; i < position.count; i++){
+            //world position
+            let vertex = new THREE.Vector3();
+            vertex.fromBufferAttribute(position, i);
+            let worldPos = this.skull.localToWorld(vertex);
+
+            let scalarProduct = normalVector.dot(worldPos);
+            if(scalarProduct > D ) // && count < 50)
+            {
+                this.addHairCard(i, options);
+
+                console.log("added");
+                count++;
+            }
+        }
+        console.log("----------------------------")
     }
 
     addCollisionsSphere = (position, radius) => {
