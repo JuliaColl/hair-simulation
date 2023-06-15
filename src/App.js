@@ -2,6 +2,7 @@ import * as THREE from 'https://cdn.skypack.dev/three@0.136';
 import { OrbitControls } from 'https://cdn.skypack.dev/three@0.136/examples/jsm/controls/OrbitControls.js';
 import { GLTFLoader } from 'https://cdn.skypack.dev/three@0.136/examples/jsm/loaders/GLTFLoader.js';
 import { GUI } from 'https://cdn.skypack.dev/lil-gui';
+import Stats from 'https://cdnjs.cloudflare.com/ajax/libs/stats.js/r17/Stats.min.js';
 
 import { SpringMassSystem1D, SpringMassSystem2D, MultipleSpringMassSystem, MassSpringHairCardSystem, modes } from './SpringMassSystem.js';
 import { Head, HairCard, CollisionSphere, materials } from './model.js'
@@ -77,9 +78,9 @@ export class App {
         info.style.fontFamily = info2.style.fontFamily = this.info3.style.fontFamily = "sans-serif";
         info.style.color = info2.style.color = this.info3.style.color = "white";
         info.style.position = info2.style.position = this.info3.style.position = 'absolute';
-        info.style.top = 30 + 'px';
+        info.style.top = 60 + 'px';
         info.style.left = info2.style.left = this.info3.style.left = 40 + 'px';
-        info2.style.top = 55 + 'px';
+        info2.style.top = 85 + 'px';
         this.info3.style.top = 75 + 'px';
         info2.style.fontSize = this.info3.style.fontSize = "small";
 
@@ -93,6 +94,12 @@ export class App {
         document.onkeydown = (e) => { InputManager.onKey(e, true); };
         document.onkeyup = (e) => { InputManager.onKey(e, false); }
 
+        // add stats 
+        this.stats = new Stats()
+        document.body.appendChild(this.stats.dom)
+
+
+        // modes
         this.modeIndeces = {
             MassSpring: 0,
             HairCard: 1,
@@ -431,6 +438,8 @@ export class App {
 
 
         this.renderer.render(this.scene, this.camera);
+        this.stats.update()
+
     }
 
     update(delta) {
