@@ -4,11 +4,20 @@ import { InputManager } from './input.js';
 
 let numberOfParticles = 5;  //is one more
 
+export let materials = {
+    basicMaterial: 0,
+    texturedMaterial: 1,
+}
+
 export class HairCard {
     mesh = null;
     system = null;
     initWPos = [];
     skullIndex = null;
+
+    static basicMaterial = null;
+    static texturedMaterial = null;
+    static currentMaterial = null;
 
     constructor(mesh = null, system = null, initWPos = null, skullIndex = 0) {
         this.mesh = mesh;
@@ -31,6 +40,16 @@ export class HairCard {
 
     changeMode(mode){
        this.system.changeMode(mode);
+    }
+
+    getCurrentMaterial() {
+        switch(HairCard.currentMaterial)
+        {
+            case materials.basicMaterial:
+                return HairCard.basicMaterial;
+            case materials.texturedMaterial:
+                return HairCard.texturedMaterial;
+        }
     }
 
     addToScene = (scene) => {
@@ -89,6 +108,7 @@ export class HairCard {
 
         if (worldNorm)
         {
+            /*
             const desiredNormal = new THREE.Vector3().copy(worldNorm).negate();
             
             const planeNormal = plane.geometry.getAttribute('normal');
@@ -113,16 +133,30 @@ export class HairCard {
             plane.geometry.attributes.normal.needsUpdate = true;
             plane.updateMatrixWorld();
 
+            */
+
+            //rotate
+            plane.geometry.lookAt(worldNorm);
+            plane.updateMatrixWorld();
+
+            // place the top of the card in the vertex position
             let position = plane.geometry.getAttribute('position');
 
-            let vertex = new THREE.Vector3();
+            let aux = new THREE.Vector3();
+            aux.fromBufferAttribute(position, 0);
+            let vertex0 = plane.localToWorld(aux);
 
-            vertex.fromBufferAttribute(position, 0);
-            let currentWorldPos = plane.localToWorld(vertex);
+            let aux2 = new THREE.Vector3();
+            aux2.fromBufferAttribute(position, 1);
+            let vertex1 = plane.localToWorld(aux2);
 
-            let x =  worldPos.x + plane.position.x - currentWorldPos.x;
-            let y = worldPos.y + plane.position.y - currentWorldPos.y;
-            let z =  worldPos.z + plane.position.z - currentWorldPos.z;
+            aux.addVectors(vertex0, vertex1)                
+            aux.divideScalar(2);
+            
+
+            let x =  worldPos.x + worldPos.x - aux.x;
+            let y = worldPos.y + worldPos.y - aux.y;
+            let z =  worldPos.z + worldPos.z - aux.z;
             plane.position.set(x, y, z);
            
         }
@@ -144,6 +178,10 @@ export class HairCard {
 
     }
 
+    updateMaterial() {
+        this.mesh.material = this.getCurrentMaterial();
+    }
+
     createHairCard = () => {
         let width = 0.05;
         let height = 0.1;
@@ -154,15 +192,11 @@ export class HairCard {
         cardGeometry.width = width;
         
         
-        //const cardMaterial = new THREE.MeshBasicMaterial({ color: 0xffff00, side: THREE.DoubleSide });
 
-        const textureLoader = new THREE.TextureLoader();
-        const texture = textureLoader.load('./data/Strand4RGB.png');
-        const aTexture = textureLoader.load('./data/Strand4A.png');
-        let cardMaterial = new THREE.MeshStandardMaterial({ map: texture, side: THREE.DoubleSide, alphaMap: aTexture });
-        let cardMesh = new THREE.Mesh(cardGeometry, cardMaterial);
+        
+        let cardMesh = new THREE.Mesh(cardGeometry, this.getCurrentMaterial());
         cardMesh.frustumCulled = false;
-        cardMaterial.transparent = true;
+        //cardMaterial.transparent = true;
         //cardMaterial.blending = THREE.NormalBlending; 
         //cardMaterial.depthTest = false; 
 
@@ -327,7 +361,6 @@ export class Head {
 
     addHairCardsFromPlane = (normalVector, D, options) => {
         let position = this.skull.geometry.getAttribute('position');
-        let count = 0;
 
         for(let i = 0; i < position.count; i++){
             //world position
@@ -340,11 +373,8 @@ export class Head {
             {
                 this.addHairCard(i, options);
 
-                console.log("added");
-                count++;
             }
         }
-        console.log("----------------------------")
     }
 
     addCollisionsSphere = (position, radius) => {
@@ -449,6 +479,11 @@ export class Head {
         }
     };
     
+    updateMaterial() {
+        for (let i = 0; i < this.hairCards.length; i++) {
+            this.hairCards[i].updateMaterial();
+        }
+    }
 
     restart = (options) => {
         this.skull.position.set(this.initPosition[0], this.initPosition[1], this.initPosition[2]);

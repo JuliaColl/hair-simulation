@@ -1,35 +1,35 @@
 
 export class InputManager {
     static staticProperty = 'someValue';
-    static isKeyW;
-    static isKeyS;
-    static isKeyA;
-    static isKeyD;
-    static isKeyQ;
-    static isKeyE;
-    static isSpace;
+    static isKeyW = false;
+    static isKeyS = false;
+    static isKeyA = false;
+    static isKeyD = false;
+    static isKeyQ = false;
+    static isKeyE = false;
+    static isSpace = false;
 
     static onKey(e, bool) {
         if (e.code === 'KeyW')
-            this.isKeyW = bool;
+            InputManager.isKeyW = bool;
 
         else if (e.code === 'KeyS')
-            this.isKeyS = bool;
+            InputManager.isKeyS = bool;
 
         else if (e.code === 'KeyA')
-            this.isKeyA = bool;
+            InputManager.isKeyA = bool;
 
         else if (e.code === 'KeyD')
-            this.isKeyD = bool;
+            InputManager.isKeyD = bool;
 
         else if (e.code === 'KeyQ')
-            this.isKeyQ = bool;
+            InputManager.isKeyQ = bool;
 
         else if (e.code === 'KeyE')
-            this.isKeyE = bool;
+            InputManager.isKeyE = bool;
 
         else if (e.code === 'Space')
-            this.isSpace = bool;
+            InputManager.isSpace = bool;
 
     }
   }

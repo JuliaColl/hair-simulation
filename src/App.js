@@ -4,7 +4,7 @@ import { GLTFLoader } from 'https://cdn.skypack.dev/three@0.136/examples/jsm/loa
 import { GUI } from 'https://cdn.skypack.dev/lil-gui';
 
 import { SpringMassSystem1D, SpringMassSystem2D, MultipleSpringMassSystem, MassSpringHairCardSystem, modes } from './SpringMassSystem.js';
-import { Head, HairCard, CollisionSphere } from './model.js'
+import { Head, HairCard, CollisionSphere, materials } from './model.js'
 import { InputManager } from './input.js';
 
 
@@ -16,6 +16,7 @@ export class App {
 
         this.clock = new THREE.Clock();
         this.loaderGLB = new GLTFLoader();
+        this.mousePos = new THREE.Vector2();
 
         // main render attributes
         this.scene = null;
@@ -65,7 +66,6 @@ export class App {
         dirLight.castShadow = false;
         this.scene.add(dirLight);
 
-        this.mousePos = new THREE.Vector2();
 
         // Add text information
         let info = document.createElement('div');
@@ -112,6 +112,7 @@ export class App {
             gravity: -10.0,
             mass: 0.02,
             d: 0.02,
+            materialType: materials.texturedMaterial,
             set: () => { this.set() },
             restart: () => { this.restart() },
             mode: this.currentModeIndex,
@@ -130,10 +131,7 @@ export class App {
         this.gui.add(this.options, 'gravity', -100, 0).name('Gravity');
         this.gui.add(this.options, 'mass', 0, 100).name('Mass');
         this.gui.add(this.options, 'd', 0.001, 1).name('Particle Distance');
-
         this.gui.add(this.options, 'applyPhysics').name('Apply Physics');
-
-        
 
         this.gui.onChange(this.onGUI);
 
@@ -145,16 +143,23 @@ export class App {
         folder.add(this.options, 'showControlHairs').name('Show Control Hairs');
         folder.add(this.options, 'showCollisionSpheres').name('Show Collision Spheres'); 
         folder.add(this.options, 'wareframe').name('Wareframe'); 
+        folder.add(this.options, 'materialType', materials).name('Hair Cards Material');
 
         folder.show(this.modeIndeces.MassSpring != this.options.mode);
 
-        // init models
+        //load textures and material
+        HairCard.basicMaterial = new THREE.MeshBasicMaterial({ color: "brown", side: THREE.DoubleSide });
+        const textureLoader = new THREE.TextureLoader();
+        const texture = textureLoader.load('./data/Strand4RGB.png');
+        const aTexture = textureLoader.load('./data/Strand4A.png');
+        HairCard.texturedMaterial = new THREE.MeshStandardMaterial({ map: texture, side: THREE.DoubleSide, alphaMap: aTexture });
+        HairCard.texturedMaterial.transparent = true;
+        HairCard.currentMaterial = this.options.materialType;
+
+
+        // init modes
         this.initOnlyMassSpringSystem();
-
         this.initOnlyOnePlaneSytem();
-
-        //this.initSkullSystem();
-
         this.initHead();
 
         console.log(this.scene);
@@ -283,7 +288,14 @@ export class App {
         if (event.property === 'wareframe') 
             this.modes[this.modeIndeces.Head].skull.material.wireframe = event.value;
 
-        
+        if(event.property === 'materialType')
+        {
+            HairCard.currentMaterial = event.value;
+            this.modes[this.currentModeIndex].updateMaterial();
+
+
+        }
+
     }
 
     initOnlyMassSpringSystem() {
@@ -343,8 +355,11 @@ export class App {
             this.modes[this.modeIndeces.Head].addHairCardsFromPlane(normal, D, this.options);
 
             //init collision spheres
-            let radius = [0.082, 0.045];
-            let posSphere = [[0,1.585,0.01], [0,1.47, 0]];
+            let radius = [0.082, 0.045, 0.063, 0.06];
+            let posSphere = [[0,1.585,0.01], [0,1.47, 0], [0,1.592, 0.04], [0,1.525, 0.052]];
+
+            //let radius = [0.06];
+            //let posSphere = [[0,1.53, 0.052]];
 
             for(let i = 0; i < radius.length; i++)
                 this.modes[this.modeIndeces.Head].addCollisionsSphere(posSphere[i], radius[i])
@@ -360,8 +375,8 @@ export class App {
     }
 
     createPlane(normal, D){
-        let width = 5;
-        let height = 5;
+        let width = 0.5;
+        let height = 0.5;
         const planeGeometry = new THREE.PlaneGeometry(width, height, 1, 1);
         planeGeometry.lookAt(normal);
         planeGeometry.translate(0, D/normal.y, 0);
