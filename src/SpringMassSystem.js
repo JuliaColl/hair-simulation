@@ -445,6 +445,7 @@ export class MassSpringHairCardSystem {
     collisionSpheres = null;
 
     isShowControlHair = false;
+    isShowParticles = false;
 
 
     constructor(position, localOffsets, {damping, k, gravity, mass, d}) {
@@ -592,7 +593,7 @@ export class MassSpringHairCardSystem {
             this.particles[j].velocity[1] = velocity[1];
             this.particles[j].velocity[2] = velocity[2];
 
-            if (this.isShowControlHair)
+            if (this.isShowControlHair || this.isShowParticles)
                 this.updateControlHair(j, position, endPos);
            
         }
@@ -663,7 +664,7 @@ export class MassSpringHairCardSystem {
             this.particles[j].velocity[2] = velocity[2];
 
               
-            if (this.isShowControlHair)
+            if (this.isShowControlHair || this.isShowParticles)
                 this.updateControlHair(j, position, endPos);
            
         }
@@ -671,16 +672,21 @@ export class MassSpringHairCardSystem {
 
     updateControlHair(j, position, endPos)
     {
-         // Update line
-         let start = new THREE.Vector3(position[0], position[1], position[2]);
-         let end = new THREE.Vector3(endPos[0], endPos[1], endPos[2]);
-         this.lines[j - 1].geometry.setFromPoints([start, end]);
+        if (this.isShowControlHair )
+        {
+            // Update line
+            let start = new THREE.Vector3(position[0], position[1], position[2]);
+            let end = new THREE.Vector3(endPos[0], endPos[1], endPos[2]);
+            this.lines[j - 1].geometry.setFromPoints([start, end]);
+        }
 
-         // update mesh particle position 
-         this.particles[j].mesh.position.x = position[0] ;
-         this.particles[j].mesh.position.y = position[1] ;
-         this.particles[j].mesh.position.z = position[2];
-        
+        if (this.isShowParticles)
+        {
+            // update mesh particle position 
+            this.particles[j].mesh.position.x = position[0] ;
+            this.particles[j].mesh.position.y = position[1] ;
+            this.particles[j].mesh.position.z = position[2];
+        }
     }
 
      /*
@@ -824,6 +830,11 @@ export class MassSpringHairCardSystem {
             this.lines[i].visible = bool;
         }
 
+    }
+
+    showParticles( bool ){
+        this.isShowParticles = bool;
+        
         for(let i = 0; i<this.particles.length; i++){
             this.particles[i].mesh.visible = bool;
         }

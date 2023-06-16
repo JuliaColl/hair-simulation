@@ -78,9 +78,9 @@ export class App {
         info.style.fontFamily = info2.style.fontFamily = this.info3.style.fontFamily = "sans-serif";
         info.style.color = info2.style.color = this.info3.style.color = "white";
         info.style.position = info2.style.position = this.info3.style.position = 'absolute';
-        info.style.top = 60 + 'px';
+        info.style.top = 70 + 'px';
         info.style.left = info2.style.left = this.info3.style.left = 40 + 'px';
-        info2.style.top = 85 + 'px';
+        info2.style.top = 95 + 'px';
         this.info3.style.top = 75 + 'px';
         info2.style.fontSize = this.info3.style.fontSize = "small";
 
@@ -118,13 +118,14 @@ export class App {
             k: 100,
             gravity: -10.0,
             mass: 0.02,
-            d: 0.02,
+            d: 0.01,
             materialType: materials.texturedMaterial,
             set: () => { this.set() },
             restart: () => { this.restart() },
             mode: this.currentModeIndex,
             systemMode: modes.inextensible,
             showControlHairs: false,
+            showParticles: false,
             showCollisionSpheres: true,
             applyPhysics: false,
             wareframe: true
@@ -148,6 +149,7 @@ export class App {
         this.gui.add(this.options, 'restart').name('Restart demo');
         
         folder.add(this.options, 'showControlHairs').name('Show Control Hairs');
+        folder.add(this.options, 'showParticles').name('Show Particles');
         folder.add(this.options, 'showCollisionSpheres').name('Show Collision Spheres'); 
         folder.add(this.options, 'wareframe').name('Wareframe'); 
         folder.add(this.options, 'materialType', materials).name('Hair Cards Material');
@@ -246,6 +248,13 @@ export class App {
             this.modes[this.currentModeIndex].showControlHairs(event.value);
         }
 
+        if (event.property === 'showParticles') {
+            if (this.currentModeIndex == this.modeIndeces.MassSpring)
+                return;
+
+            this.modes[this.currentModeIndex].showParticles(event.value);
+        }
+
         if (event.property === 'showCollisionSpheres') {
             if (this.currentModeIndex == this.modeIndeces.Head)
                 this.modes[this.currentModeIndex].showCollisionSpheres(event.value);
@@ -324,6 +333,8 @@ export class App {
         this.modes[this.modeIndeces.HairCard].addToScene(this.scene);
         this.modes[this.modeIndeces.HairCard].setVisible(this.currentModeIndex == this.modeIndeces.HairCard);
         this.modes[this.modeIndeces.HairCard].showControlHairs(this.currentModeIndex == this.modeIndeces.HairCard && this.options.showControlHairs);
+        this.modes[this.modeIndeces.HairCard].showParticles(this.currentModeIndex == this.modeIndeces.HairCard && this.options.showParticles);
+
     };
 
     initHead() {
@@ -376,6 +387,7 @@ export class App {
             this.modes[this.modeIndeces.Head].setVisible(this.currentModeIndex == this.modeIndeces.Head);
             this.modes[this.modeIndeces.Head].showControlHairs(this.currentModeIndex == this.modeIndeces.Head && this.options.showControlHairs);
             this.modes[this.modeIndeces.Head].showCollisionSpheres(this.currentModeIndex == this.modeIndeces.Head && this.options.showCollisionSpheres);
+            this.modes[this.modeIndeces.Head].showParticles(this.currentModeIndex == this.modeIndeces.HairCard && this.options.showParticles);
 
             
         });
@@ -466,6 +478,8 @@ export class App {
         else if (this.currentModeIndex == this.modeIndeces.HairCard) {
             this.modes[this.modeIndeces.HairCard].setVisible(false);
             this.modes[this.modeIndeces.HairCard].showControlHairs(false);
+            this.modes[this.modeIndeces.HairCard].showParticles(false);
+
             let spheres = this.modes[this.modeIndeces.HairCard].system.collisionSpheres;
             for (let i = 0; i < spheres.length; i++)
                 spheres[i].setVisible(false);
@@ -475,6 +489,7 @@ export class App {
         else if (this.currentModeIndex == this.modeIndeces.Head) {
             this.modes[this.modeIndeces.Head].setVisible(false);
             this.modes[this.modeIndeces.Head].showControlHairs(false);
+            this.modes[this.modeIndeces.Head].showParticles(false);
             this.modes[this.modeIndeces.Head].showCollisionSpheres(false);
         }
 
@@ -486,6 +501,7 @@ export class App {
         else if (this.options.mode == this.modeIndeces.HairCard) {
             this.modes[this.modeIndeces.HairCard].setVisible(true);
             this.modes[this.modeIndeces.HairCard].showControlHairs(this.options.showControlHairs);
+            this.modes[this.modeIndeces.HairCard].showParticles(this.options.showParticles);
             let spheres = this.modes[this.modeIndeces.HairCard].system.collisionSpheres;
             for (let i = 0; i < spheres.length; i++)
                 spheres[i].setVisible(this.options.showCollisionSpheres);
@@ -495,6 +511,7 @@ export class App {
         else if (this.options.mode == this.modeIndeces.Head) {
             this.modes[this.modeIndeces.Head].setVisible(true);
             this.modes[this.modeIndeces.Head].showControlHairs(this.options.showControlHairs);
+            this.modes[this.modeIndeces.Head].showParticles(this.options.showParticles);
             this.modes[this.modeIndeces.Head].showCollisionSpheres(this.options.showCollisionSpheres);
 
         }

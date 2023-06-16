@@ -38,6 +38,10 @@ export class HairCard {
         this.system.showControlHair(bool);
     }
 
+    showParticles = (bool) => {
+        this.system.showParticles(bool);
+    }
+
     changeMode(mode){
        this.system.changeMode(mode);
     }
@@ -361,7 +365,7 @@ export class Head {
 
     addHairCardsFromPlane = (normalVector, D, options) => {
         let position = this.skull.geometry.getAttribute('position');
-
+        let count = 0;
         for(let i = 0; i < position.count; i++){
             //world position
             let vertex = new THREE.Vector3();
@@ -372,9 +376,11 @@ export class Head {
             if(scalarProduct > D ) // && count < 50)
             {
                 this.addHairCard(i, options);
-
+                count++;
             }
         }
+
+        console.log("number of hair cards: " + count);
     }
 
     addCollisionsSphere = (position, radius) => {
@@ -547,6 +553,12 @@ export class Head {
     showControlHairs = (bool) => {
         for (let i = 0; i < this.hairCards.length; i++) {
             this.hairCards[i].showControlHairs(bool);
+        }
+    }
+
+    showParticles = (bool) => {
+        for (let i = 0; i < this.hairCards.length; i++) {
+            this.hairCards[i].showParticles(bool);
         }
     }
 
