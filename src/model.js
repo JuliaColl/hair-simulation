@@ -14,15 +14,17 @@ export class HairCard {
     system = null;
     initWPos = [];
     skullIndex = null;
+    initWPos = null;
+    initParticlesWPos = null;
 
     static basicMaterial = null;
     static texturedMaterial = null;
     static currentMaterial = null;
 
-    constructor(mesh = null, system = null, initWPos = null, skullIndex = 0) {
+    constructor(mesh = null, system = null, initParticlesWPos = null, skullIndex = 0) {
         this.mesh = mesh;
         this.system = system;
-        this.initWPos = initWPos;
+        this.initParticlesWPos = initParticlesWPos;
         this.skullIndex = skullIndex;
     }
 
@@ -70,7 +72,7 @@ export class HairCard {
 
     loadMassSpringHairCardSystem = (mesh, options) => {
         let position = mesh.geometry.getAttribute('position')
-        let initWPos = [];
+        let initParticlesWPos = [];
         let localOffsets = [];
 
         
@@ -87,7 +89,6 @@ export class HairCard {
             // get init World Position of the control hair
             worldPos.add(worldPos2);
             worldPos.divideScalar(2);
-            //initWPos.push(worldPos);
             
 
             // get local offset
@@ -99,10 +100,10 @@ export class HairCard {
 
 
             localOffsets.push(offset);
-            initWPos.push(worldPos)
+            initParticlesWPos.push(worldPos)
         }
 
-        return { system: new MassSpringHairCardSystem(initWPos, localOffsets, options), initWPos: initWPos };
+        return { system: new MassSpringHairCardSystem(initParticlesWPos, localOffsets, options), initParticlesWPos: initParticlesWPos };
     }
 
     initHairSystem = (index, worldPos, options, worldNorm = null, collisionSpheres = null ) => {
@@ -161,23 +162,25 @@ export class HairCard {
             let x =  worldPos.x + worldPos.x - aux.x;
             let y = worldPos.y + worldPos.y - aux.y;
             let z =  worldPos.z + worldPos.z - aux.z;
+            this.initWPos = [x,y,z];
             plane.position.set(x, y, z);
            
         }
 
         else{
+            this.initWPos = [worldPos.x, worldPos.y - plane.geometry.height / 2, worldPos.z];
             plane.position.set(worldPos.x, worldPos.y - plane.geometry.height / 2, worldPos.z);
         }
 
         plane.updateMatrixWorld();
 
-        let { system, initWPos } = this.loadMassSpringHairCardSystem(plane, options);
+        let { system, initParticlesWPos } = this.loadMassSpringHairCardSystem(plane, options);
         system.setAnchor([worldPos.x, worldPos.y, worldPos.z]);
         system.collisionSpheres = collisionSpheres;    // TODO: idk if this is optimal
 
         this.mesh = plane;
         this.system = system;
-        this.initWPos = initWPos;
+        this.initParticlesWPos = initParticlesWPos;
         this.skullIndex = index;
 
     }
@@ -230,8 +233,9 @@ export class HairCard {
 
     restart(options)
     {
-        this.system.restart(options, this.initWPos);
-    }
+        this.system.restart(options, this.initParticlesWPos);
+        this.mesh.position.set(this.initWPos[0], this.initWPos[1], this.initWPos[2]);
+    }   
 
     rotateCard(rad){
         this.mesh.rotation.y += rad;
@@ -271,9 +275,11 @@ export class HairCard {
         }
 
         if (InputManager.isSpace) {
-            this.modes[this.modeIndeces.HairCard].rotateCard(delta);
+            this.rotateCard(delta);
         }
     }
+
+    updateNoPhysics(delta){};
 
 }
 
@@ -445,6 +451,33 @@ export class Head {
 
     }
 
+    updateNoPhysics(delta) {  
+       
+        let tt = delta * 0.2;
+        if (InputManager.isKeyQ) {
+            this.moveSkullNoPhysics(0, tt, 0);
+        }
+        if (InputManager.isKeyE) {
+            this.moveSkullNoPhysics(0, - tt, 0);
+        }
+        if (InputManager.isKeyA) {
+            this.moveSkullNoPhysics(- tt, 0, 0);
+        }
+        if (InputManager.isKeyD) {
+            this.moveSkullNoPhysics( tt, 0, 0);
+        }
+        if (InputManager.isKeyS) {
+            this.moveSkullNoPhysics(0, 0, tt);
+        }
+        if (InputManager.isKeyW) {
+            this.moveSkullNoPhysics(0, 0, - tt);
+        }
+        if (InputManager.isSpace) {
+            //this.rotateSkullNoPhysics(delta * 1.5);
+        }
+
+    }
+
     moveSkull = (dx, dy, dz) => {
         // TRY GROUP
         // let position = this.headSystem.position;
@@ -459,6 +492,24 @@ export class Head {
         this.moveCollisionSpheres(dx, dy, dz);
 
         this.updateHairCardsPos();
+    }
+
+    moveSkullNoPhysics = (dx, dy, dz) => {
+        let position = this.skull.position;
+        this.skull.position.set(position.x + dx, position.y + dy, position.z + dz);
+        this.skull.updateMatrixWorld();
+        
+        this.moveCollisionSpheres(dx, dy, dz);
+        
+        for(let i = 0; i<this.hairCards.length; i++)
+        {
+            let cardPos = this.hairCards[i].mesh.position;
+
+            this.hairCards[i].mesh.position.set(cardPos.x + dx, cardPos.y + dy, cardPos.z + dz);
+            this.hairCards[i].setPosition(cardPos.x + dx, cardPos.y + dy, cardPos.z + dz);
+
+        }
+
     }
 
     moveCollisionSpheres = (dx, dy, dz) => {
@@ -493,7 +544,9 @@ export class Head {
 
     restart = (options) => {
         this.skull.position.set(this.initPosition[0], this.initPosition[1], this.initPosition[2]);
-        
+        this.skull.updateMatrixWorld();
+
+
         for(let i = 0; i < this.collisionSpheres.length; i++)
             this.collisionSpheres[i].restart();
         
@@ -501,6 +554,7 @@ export class Head {
         for (let i = 0; i < this.hairCards.length; i++)
             this.hairCards[i].restart(options); 
         
+        this.updateHairCardsPos();
     };
 
     

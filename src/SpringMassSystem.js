@@ -413,6 +413,9 @@ export class MultipleSpringMassSystem {
             }
         }
     }
+
+    updateNoPhysics(delta){};
+
 }
 
 function Particle(p, v, i, o, m = 20){
@@ -650,7 +653,7 @@ export class MassSpringHairCardSystem {
             velocity1[1] = velocity1[1] + acceleration[1] * delta;
             velocity1[2] = velocity1[2] + acceleration[2] * delta;
 
-
+            
             let {position, velocity} = this.checkCollision1(position1, velocity1, delta);
             //let {position, velocity} = this.checkCollision2(position1, velocity1, delta, force);
 
@@ -693,6 +696,8 @@ export class MassSpringHairCardSystem {
         source: https://www.martinruenz.de/media/pubs/ruenz12bachelor.pdf
      */
 
+    
+
     checkCollision1(position, velocity, delta){
         let newPos = [position[0] + velocity[0] * delta, position[1] + velocity[1] * delta, position[2] + velocity[2] * delta]
  
@@ -708,7 +713,7 @@ export class MassSpringHairCardSystem {
 
             let difSquared = (cs.radius + particlesRadius) * (cs.radius + particlesRadius);
             
-            if((modulusSquared - difSquared) < 0)  //there is collision
+            if((modulusSquared - difSquared) < -0.00001)  //there is collision
             {
                 let modulus = Math.sqrt(modulusSquared);
                 normalizeVec3(vec);
@@ -754,7 +759,8 @@ export class MassSpringHairCardSystem {
 
                 //TODO: update velocity somehow :)
                 let finalVel = [0,0,0];
-               
+                this.checkCollision1(finalPos, [0,0,0], delta);
+
 
                 return {position: finalPos, velocity: [0,0,0]};
             }
@@ -823,6 +829,9 @@ export class MassSpringHairCardSystem {
         return {position: newPos, velocity: velocity};
 
     }
+
+    updateNoPhysics(delta){};
+
 
     showControlHair( bool ){
         this.isShowControlHair = bool;

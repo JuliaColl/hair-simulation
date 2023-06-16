@@ -311,6 +311,10 @@ export class App {
 
 
         }
+        if (event.property === 'applyPhysics' && this.currentModeIndex == this.modeIndeces.Head && this.modes[this.currentModeIndex]) {
+            this.modes[this.currentModeIndex].updateHairCardsPos();
+        }
+
 
     }
 
@@ -325,11 +329,17 @@ export class App {
 
         let collision = new CollisionSphere([0, 1.4, 0.2], 0.05);
         collision.mesh.visible = this.currentModeIndex == this.modeIndeces.HairCard && this.options.showCollisionSpheres;
+
+        let collision2 = new CollisionSphere([0, 1.4, 0.3], 0.07);
+        collision2.mesh.visible = this.currentModeIndex == this.modeIndeces.HairCard && this.options.showCollisionSpheres;
+
         this.modes[this.modeIndeces.HairCard] = new HairCard();
-        this.modes[this.modeIndeces.HairCard].initHairSystem(0, initPlanePos, this.options, null, [collision]);
+        this.modes[this.modeIndeces.HairCard].initHairSystem(0, initPlanePos, this.options, null, [collision, collision2]);
         
 
         this.scene.add(collision.mesh);
+        this.scene.add(collision2.mesh);
+
         this.modes[this.modeIndeces.HairCard].addToScene(this.scene);
         this.modes[this.modeIndeces.HairCard].setVisible(this.currentModeIndex == this.modeIndeces.HairCard);
         this.modes[this.modeIndeces.HairCard].showControlHairs(this.currentModeIndex == this.modeIndeces.HairCard && this.options.showControlHairs);
@@ -374,7 +384,7 @@ export class App {
 
             //init collision spheres
             let radius = [0.082, 0.045, 0.063, 0.06];
-            let posSphere = [[0,1.585,0.01], [0,1.47, 0], [0,1.592, 0.04], [0,1.525, 0.052]];
+            let posSphere = [[0,1.586,0.01], [0,1.47, 0], [0,1.593, 0.04], [0,1.525, 0.052]];
 
             //let radius = [0.06];
             //let posSphere = [[0,1.53, 0.052]];
@@ -462,6 +472,10 @@ export class App {
 
         if (this.options.applyPhysics) {
             model.update(delta);
+        }
+        else{
+            if (this.currentModeIndex == this.modeIndeces.Head && this.modes[this.modeIndeces.Head]);
+                model.updateNoPhysics(delta)
         }
         
 
