@@ -122,11 +122,13 @@ export class App {
             materialType: materials.texturedMaterial,
             set: () => { this.set() },
             restart: () => { this.restart() },
+            create: () => { this.createNewDemo()},
             mode: this.currentModeIndex,
             systemMode: modes.inextensible,
             showControlHairs: false,
             showParticles: false,
             showCollisionSpheres: true,
+            showHairCards: true,
             applyPhysics: false,
             wareframe: true
         };
@@ -147,14 +149,40 @@ export class App {
 
         this.gui.add(this.options, 'set').name('Set params');
         this.gui.add(this.options, 'restart').name('Restart demo');
-        
+        this.gui.add(this.options, 'create').name('Create new demo');
+
         folder.add(this.options, 'showControlHairs').name('Show Control Hairs');
         folder.add(this.options, 'showParticles').name('Show Particles');
+        folder.add(this.options, 'showHairCards').name('Show Hair Cards');
         folder.add(this.options, 'showCollisionSpheres').name('Show Collision Spheres'); 
         folder.add(this.options, 'wareframe').name('Wareframe'); 
         folder.add(this.options, 'materialType', materials).name('Hair Cards Material');
 
         folder.show(this.modeIndeces.MassSpring != this.options.mode);
+        
+
+
+        // init gui new demo
+        this.guiCreate = new GUI().title('New Simulation Parameters');
+        this.guiCreateOptions = {
+            damping: 3,
+            k: 100,
+            gravity: -10.0,
+            mass: 0.02,
+            d: 0.01,
+            numberParticles: 5,
+            start: () => { this.startNewDemo()},
+        };
+
+        this.guiCreate.add(this.guiCreateOptions, 'damping', 0.01, 150).name('Damping');
+        this.guiCreate.add(this.guiCreateOptions, 'k', 0.01, 1000).name('K');
+        this.guiCreate.add(this.guiCreateOptions, 'gravity', -100, 0).name('Gravity');
+        this.guiCreate.add(this.guiCreateOptions, 'mass', 0.0001, 1).name('Mass');
+        this.guiCreate.add(this.guiCreateOptions, 'd', 0.001, 0.3).name('Particle Distance');
+        this.guiCreate.add(this.guiCreateOptions, 'numberParticles', 1, 50).name('Particles per hair card');
+        this.guiCreate.add(this.guiCreateOptions, 'start').name('Start demo');
+        this.guiCreate.show(false);
+
 
         //load textures and material
         HairCard.basicMaterial = new THREE.MeshPhongMaterial({ color: "brown", side: THREE.DoubleSide });
@@ -253,6 +281,13 @@ export class App {
                 return;
 
             this.modes[this.currentModeIndex].showParticles(event.value);
+        }
+
+        if (event.property === 'showHairCards') {
+            if (this.currentModeIndex == this.modeIndeces.MassSpring)
+                return;
+
+            this.modes[this.currentModeIndex].showHairCards(event.value);
         }
 
         if (event.property === 'showCollisionSpheres') {
@@ -398,8 +433,6 @@ export class App {
             this.modes[this.modeIndeces.Head].showControlHairs(this.currentModeIndex == this.modeIndeces.Head && this.options.showControlHairs);
             this.modes[this.modeIndeces.Head].showCollisionSpheres(this.currentModeIndex == this.modeIndeces.Head && this.options.showCollisionSpheres);
             this.modes[this.modeIndeces.Head].showParticles(this.currentModeIndex == this.modeIndeces.HairCard && this.options.showParticles);
-
-            
         });
     }
 
@@ -436,6 +469,39 @@ export class App {
         model.restart(this.options);
 
     };
+
+    createNewDemo() {
+        this.gui.show(false);
+        this.guiCreate.show(true);
+
+        this.modes[this.modeIndeces.Head].removeHairCards(this.scene);
+        this.modes[this.modeIndeces.Head].showCollisionSpheres(false);
+        this.modes[this.modeIndeces.Head].showParticles(false);
+        this.modes[this.modeIndeces.Head].showControlHairs(false);
+
+    }
+
+    startNewDemo(){
+        let normal = new THREE.Vector3(0,1.2,-1);
+        let D = 1.8852;
+        //this.createPlane(normal, D);
+        this.modes[this.modeIndeces.Head].addHairCardsFromPlane(normal, D, this.guiCreateOptions, Math.ceil(this.guiCreateOptions.numberParticles));
+
+        this.modes[this.modeIndeces.Head].addHairCardsToScene(this.scene);
+        this.modes[this.modeIndeces.Head].showControlHairs(this.currentModeIndex == this.modeIndeces.Head && this.options.showControlHairs);
+        this.modes[this.modeIndeces.Head].showCollisionSpheres(this.currentModeIndex == this.modeIndeces.Head && this.options.showCollisionSpheres);
+        this.modes[this.modeIndeces.Head].showParticles(this.currentModeIndex == this.modeIndeces.HairCard && this.options.showParticles);
+
+
+        this.options.damping =  this.guiCreateOptions.damping;
+        this.options.k = this.guiCreateOptions.k;
+        this.options.gravity =this.guiCreateOptions.gravity;
+        this.options.mass = this.guiCreateOptions.mass;
+        this.options.d = this.guiCreateOptions.d;
+
+        this.gui.show(true);
+        this.guiCreate.show(false);
+    }
 
     onWindowResize() {
 

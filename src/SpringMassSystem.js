@@ -849,6 +849,17 @@ export class MassSpringHairCardSystem {
         }
     }
 
+    remove( scene ){
+        
+        for(let i = 0; i<this.particles.length; i++){
+            scene.remove(this.particles[i].mesh);
+        }
+
+        for(let i = 0; i<this.lines.length; i++){
+            scene.remove(this.lines[i]);
+        }
+    }
+
     
     
 }

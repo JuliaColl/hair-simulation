@@ -2,7 +2,7 @@ import * as THREE from 'https://cdn.skypack.dev/three@0.136';
 import { MassSpringHairCardSystem, scalarPorductVec3 } from './SpringMassSystem.js';
 import { InputManager } from './input.js';
 
-let numberOfParticles = 5;  //is one more
+//let numberOfParticles = 5;  //is one more
 
 export let materials = {
     basicMaterial: 0,
@@ -42,6 +42,10 @@ export class HairCard {
 
     showParticles = (bool) => {
         this.system.showParticles(bool);
+    }
+
+    showHairCards = (bool) => {
+        this.mesh.visible = bool;
     }
 
     changeMode(mode){
@@ -106,8 +110,8 @@ export class HairCard {
         return { system: new MassSpringHairCardSystem(initParticlesWPos, localOffsets, options), initParticlesWPos: initParticlesWPos };
     }
 
-    initHairSystem = (index, worldPos, options, worldNorm = null, collisionSpheres = null ) => {
-        let plane = this.createHairCard();
+    initHairSystem = (index, worldPos, options, worldNorm = null, collisionSpheres = null, numberOfParticles = 5 ) => {
+        let plane = this.createHairCard(numberOfParticles);
         plane.position.set(worldPos.x, worldPos.y , worldPos.z);
         plane.updateMatrixWorld();
 
@@ -189,7 +193,7 @@ export class HairCard {
         this.mesh.material = this.getCurrentMaterial();
     }
 
-    createHairCard = () => {
+    createHairCard = (numberOfParticles = 5) => {
         let width = 0.05;
         let height = 0.1;
         const cardGeometry = new THREE.PlaneGeometry(width, height, 1, numberOfParticles);
@@ -281,6 +285,12 @@ export class HairCard {
 
     updateNoPhysics(delta){};
 
+    remove(scene){
+        scene.remove(this.mesh);
+        this.system.remove(scene);
+        this.system = null;
+    }
+
 }
 
 export class CollisionSphere {
@@ -370,7 +380,7 @@ export class Head {
         }
     }
 
-    addHairCard = (index, options) => {
+    addHairCard = (index, options, numberOfParticles = 5) => {
         let position = this.skull.geometry.getAttribute('position');
         let normals = this.skull.geometry.getAttribute('normal');
 
@@ -386,12 +396,12 @@ export class Head {
         let worldNorm = this.skull.localToWorld(normal);
 
         let hairCard = new HairCard();
-        hairCard.initHairSystem(index, worldPos, options, worldNorm, this.collisionSpheres);
+        hairCard.initHairSystem(index, worldPos, options, worldNorm, this.collisionSpheres, numberOfParticles);
         this.hairCards.push(hairCard);
 
     }
 
-    addHairCardsFromPlane = (normalVector, D, options) => {
+    addHairCardsFromPlane = (normalVector, D, options, numberOfParticles = 5) => {
         let position = this.skull.geometry.getAttribute('position');
         let count = 0;
         for(let i = 0; i < position.count; i++){
@@ -403,7 +413,7 @@ export class Head {
             let scalarProduct = normalVector.dot(worldPos);
             if(scalarProduct > D ) // && count < 50)
             {
-                this.addHairCard(i, options);
+                this.addHairCard(i, options, numberOfParticles);
                 count++;
             }
         }
@@ -420,15 +430,19 @@ export class Head {
 
     }
 
+    addHairCardsToScene = (scene) => {
+        for (let i = 0; i < this.hairCards.length; i++) {
+            this.hairCards[i].addToScene(scene);
+        }
+    }
+
     addToScene = (scene) => {
        // TRY GROUP
        //scene.add(this.headSystem);
         
        scene.add(this.skull);
 
-        for (let i = 0; i < this.hairCards.length; i++) {
-            this.hairCards[i].addToScene(scene);
-        }
+        this.addHairCardsToScene(scene);
 
         
         for(let i = 0; i < this.collisionSpheres.length; i++) {
@@ -648,6 +662,12 @@ export class Head {
         }
     }
 
+    showHairCards = (bool) => {
+        for (let i = 0; i < this.hairCards.length; i++) {
+            this.hairCards[i].showHairCards(bool);
+        }
+    }
+
     showCollisionSpheres = (bool) => {
         for (let i = 0; i < this.collisionSpheres.length; i++) {
             this.collisionSpheres[i].setVisible(bool);
@@ -667,6 +687,13 @@ export class Head {
         }
     }
 
+    removeHairCards(scene){
+        for (let i = 0; i < this.hairCards.length; i++) {
+            this.hairCards[i].remove(scene);
+        }
+
+        this.hairCards = [];
+    }
     
      
 }
