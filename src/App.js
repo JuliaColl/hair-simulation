@@ -53,7 +53,7 @@ export class App {
 
         this.controls = new OrbitControls(this.camera, canvas);
         this.controls.minDistance = 0.1;
-        this.controls.maxDistance = 10;
+        this.controls.maxDistance = 3;
         this.controls.target = new THREE.Vector3(0, 1.3, 0);
         this.controls.update();
 

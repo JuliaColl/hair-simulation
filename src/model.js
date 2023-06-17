@@ -298,6 +298,10 @@ export class CollisionSphere {
         this.mesh = new THREE.Mesh( geometry, material ); 
 
         this.mesh.position.set(center[0], center[1], center[2]);
+        // this.mesh.translateX(center[0]);
+        // this.mesh.translateY(center[1]);
+        // this.mesh.translateZ(center[2]);
+
         this.mesh.updateMatrixWorld();
 
         this.initWPos = [...center];
@@ -318,6 +322,24 @@ export class CollisionSphere {
     setPosition(x,y,z){
         this.mesh.position.set(x,y,z);
         this.center = [x, y, z];
+    }
+
+    rotate(rad, pivot){
+        //this.mesh.rotation.y += rad;
+        //this.mesh.updateMatrixWorld();
+
+        let translationMatrix1 = new THREE.Matrix4().makeTranslation(-pivot.x, -pivot.y, -pivot.z);
+        let rotationMatrix = new THREE.Matrix4().makeRotationY(rad);
+        const translationMatrix2 = new THREE.Matrix4().makeTranslation(pivot.x, pivot.y, pivot.z);
+
+        this.mesh.applyMatrix4(translationMatrix1);
+        this.mesh.applyMatrix4(rotationMatrix);
+        this.mesh.applyMatrix4(translationMatrix2);
+        this.mesh.updateMatrixWorld();
+
+        this.center = [this.mesh.position.x, this.mesh.position.y, this.mesh.position.z];
+
+
     }
 }
 
@@ -586,6 +608,7 @@ export class Head {
         
         this.skull.rotation.y += rad;
         this.skull.updateMatrixWorld();
+        this.rotateCollisionSpheres(rad, this.skull.position);
         this.rotateCards(rad);
         this.updateHairCardsPos();
     }
@@ -593,6 +616,13 @@ export class Head {
     rotateCards(rad){
         for (let i = 0; i < this.hairCards.length; i++) {
             this.hairCards[i].rotateCard(rad);
+
+        }
+    }
+
+    rotateCollisionSpheres(rad, pivot){
+        for (let i = 0; i < this.collisionSpheres.length; i++) {
+            this.collisionSpheres[i].rotate(rad, pivot);
 
         }
     }
