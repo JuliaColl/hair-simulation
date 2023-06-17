@@ -134,11 +134,11 @@ export class App {
         this.gui = new GUI().title('Simulation Parameters');
         this.gui.add(this.options, 'mode', this.modeIndeces).name('Mode');
         this.gui.add(this.options, 'systemMode', modes).name('System Mode');
-        this.gui.add(this.options, 'damping', 0.01, 1000).name('Damping');
+        this.gui.add(this.options, 'damping', 0.01, 150).name('Damping');
         this.gui.add(this.options, 'k', 0.01, 1000).name('K');
         this.gui.add(this.options, 'gravity', -100, 0).name('Gravity');
-        this.gui.add(this.options, 'mass', 0, 100).name('Mass');
-        this.gui.add(this.options, 'd', 0.001, 1).name('Particle Distance');
+        this.gui.add(this.options, 'mass', 0.0001, 1).name('Mass');
+        this.gui.add(this.options, 'd', 0.001, 0.3).name('Particle Distance');
         this.gui.add(this.options, 'applyPhysics').name('Apply Physics');
 
         this.gui.onChange(this.onGUI);
@@ -157,7 +157,7 @@ export class App {
         folder.show(this.modeIndeces.MassSpring != this.options.mode);
 
         //load textures and material
-        HairCard.basicMaterial = new THREE.MeshBasicMaterial({ color: "brown", side: THREE.DoubleSide });
+        HairCard.basicMaterial = new THREE.MeshPhongMaterial({ color: "brown", side: THREE.DoubleSide });
         const textureLoader = new THREE.TextureLoader();
         const texture = textureLoader.load('./data/Strand4RGB.png');
         const aTexture = textureLoader.load('./data/Strand4A.png');

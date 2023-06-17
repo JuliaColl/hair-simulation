@@ -566,6 +566,8 @@ export class Head {
 
     restart = (options) => {
         this.skull.position.set(this.initPosition[0], this.initPosition[1], this.initPosition[2]);
+        this.skull.rotation.y = 0;
+
         this.skull.updateMatrixWorld();
 
 
