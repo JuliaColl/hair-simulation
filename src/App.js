@@ -324,16 +324,28 @@ export class App {
             this.gui.folders[0].show(this.modeIndeces.MassSpring != event.value);
             this.updateMode();
             
-            let controller = this.gui.folders[0].controllers
+            let controller = this.gui.controllers
 
             for(let i = 0; i < controller.length; i++)
             {
                 if(controller[i].property === "wareframe" )
                     controller[i].show(event.value == this.modeIndeces.Head);
 
+                if(controller[i].property === "create" )
+                    controller[i].show(event.value == this.modeIndeces.Head);
             }
-            
 
+            /*
+            let controller = this.gui.controllers
+            for(let i = 0; i < controller.length; i++)
+            {
+                if(controller[i].property === "d" )
+                    controller[i].show(modes.inextensible == event.value);
+
+            }
+            */
+            
+            
         }
 
         if (event.property === 'wareframe') 
