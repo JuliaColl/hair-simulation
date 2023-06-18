@@ -171,6 +171,10 @@ export class App {
             mass: 0.02,
             d: 0.01,
             numberParticles: 5,
+            planeA: 0,
+            planeB: 1.2,
+            planeC: -1,
+            planeD: 1.8852,
             start: () => { this.startNewDemo()},
         };
 
@@ -180,9 +184,21 @@ export class App {
         this.guiCreate.add(this.guiCreateOptions, 'mass', 0.0001, 1).name('Mass');
         this.guiCreate.add(this.guiCreateOptions, 'd', 0.001, 0.3).name('Particle Distance');
         this.guiCreate.add(this.guiCreateOptions, 'numberParticles', 1, 50).name('Particles per hair card');
-        this.guiCreate.add(this.guiCreateOptions, 'start').name('Start demo');
         this.guiCreate.show(false);
 
+        let folderCreate = this.guiCreate.addFolder('Plane Equation');
+        folderCreate.add(this.guiCreateOptions, 'planeA', -5, 5).name('A');
+        folderCreate.add(this.guiCreateOptions, 'planeB', -5, 5).name('B');
+        folderCreate.add(this.guiCreateOptions, 'planeC', -5, 5).name('C');
+        folderCreate.add(this.guiCreateOptions, 'planeD', -5, 5).name('D');
+        
+        this.guiCreate.add(this.guiCreateOptions, 'start').name('Start demo');
+        
+        this.guiCreate.onChange(this.onCreateGUI);
+
+        this.createPlane()
+        this.updatePlane();
+        this.isCreateDemo = false;
 
         //load textures and material
         HairCard.basicMaterial = new THREE.MeshPhongMaterial({ color: "brown", side: THREE.DoubleSide });
@@ -362,7 +378,12 @@ export class App {
             this.modes[this.currentModeIndex].updateHairCardsPos();
         }
 
+    }
 
+    onCreateGUI = (event) => {
+        if (event.property === 'planeA' || event.property === 'planeB' || event.property === 'planeC' || event.property === 'planeD') {
+            this.updatePlane();
+        }
     }
 
     initOnlyMassSpringSystem() {
@@ -423,8 +444,8 @@ export class App {
             let indeces = [];
             this.modes[this.modeIndeces.Head] = new Head(head, indeces, this.options, pos);
 
-            let normal = new THREE.Vector3(0,1.2,-1);
-            let D = 1.8852;
+            let normal = new THREE.Vector3(this.guiCreateOptions.planeA,this.guiCreateOptions.planeB,this.guiCreateOptions.planeC)
+            let D = this.guiCreateOptions.planeD;
             //this.createPlane(normal, D);
 
             this.modes[this.modeIndeces.Head].addHairCardsFromPlane(normal, D, this.options);
@@ -448,18 +469,27 @@ export class App {
         });
     }
 
-    createPlane(normal, D){
+    createPlane(){
         let width = 0.5;
         let height = 0.5;
         const planeGeometry = new THREE.PlaneGeometry(width, height, 1, 1);
-        planeGeometry.lookAt(normal);
-        planeGeometry.translate(0, D/normal.y, 0);
+        //planeGeometry.lookAt(normal);
+        //planeGeometry.translate(0, D/normal.y, 0);
         
         //const cardMaterial = new THREE.MeshBasicMaterial({ color: 0xffff00, side: THREE.DoubleSide });
 
         let material = new THREE.MeshStandardMaterial({ color: "red", side: THREE.DoubleSide});
-        let plane = new THREE.Mesh(planeGeometry, material);
-        this.scene.add(plane);
+        this.plane = new THREE.Mesh(planeGeometry, material);
+        this.scene.add(this.plane);
+        this.plane.visible = false;
+    }
+
+    updatePlane(){
+        let normal = new THREE.Vector3(this.guiCreateOptions.planeA,this.guiCreateOptions.planeB,this.guiCreateOptions.planeC)
+        let D = this.guiCreateOptions.planeD;
+        this.plane.position.set(0,0,0);
+        this.plane.lookAt(normal);
+        this.plane.position.set(0, D/normal.y, 0);
     }
 
     set() {
@@ -491,12 +521,17 @@ export class App {
         this.modes[this.modeIndeces.Head].showParticles(false);
         this.modes[this.modeIndeces.Head].showControlHairs(false);
 
+        this.modes[this.modeIndeces.Head].restart();
+
+        this.plane.visible = true;
+        this.isCreateDemo = true;
+
     }
 
     startNewDemo(){
-        let normal = new THREE.Vector3(0,1.2,-1);
-        let D = 1.8852;
-        //this.createPlane(normal, D);
+        let normal = new THREE.Vector3(this.guiCreateOptions.planeA,this.guiCreateOptions.planeB,this.guiCreateOptions.planeC)
+        let D = this.guiCreateOptions.planeD;
+
         this.modes[this.modeIndeces.Head].addHairCardsFromPlane(normal, D, this.guiCreateOptions, Math.ceil(this.guiCreateOptions.numberParticles));
 
         this.modes[this.modeIndeces.Head].addHairCardsToScene(this.scene);
@@ -511,8 +546,12 @@ export class App {
         this.options.mass = this.guiCreateOptions.mass;
         this.options.d = this.guiCreateOptions.d;
 
+        this.plane.visible = false;
+
         this.gui.show(true);
         this.guiCreate.show(false);
+        this.isCreateDemo = false;
+
     }
 
     onWindowResize() {
@@ -548,11 +587,11 @@ export class App {
         if (!model)
             return;
 
-        if (this.options.applyPhysics) {
+        if (this.options.applyPhysics &&  !this.isCreateDemo ) {
             model.update(delta);
         }
         else{
-            if (this.currentModeIndex == this.modeIndeces.Head && this.modes[this.modeIndeces.Head]);
+            if (this.currentModeIndex == this.modeIndeces.Head && this.modes[this.modeIndeces.Head] &&  !this.isCreateDemo)
                 model.updateNoPhysics(delta)
         }
         
