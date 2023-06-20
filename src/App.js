@@ -174,7 +174,7 @@ export class App {
             planeA: 0,
             planeB: 1.2,
             planeC: -1,
-            planeD: 1.8852,
+            planeD: 1.8855,
             start: () => { this.startNewDemo()},
         };
 
@@ -205,8 +205,9 @@ export class App {
         const textureLoader = new THREE.TextureLoader();
         const texture = textureLoader.load('./data/Strand4RGB.png');
         const aTexture = textureLoader.load('./data/Strand4A.png');
-        HairCard.texturedMaterial = new THREE.MeshStandardMaterial({ map: texture, side: THREE.DoubleSide, alphaMap: aTexture });
-        HairCard.texturedMaterial.transparent = true;
+        HairCard.texturedMaterial = new THREE.MeshStandardMaterial({ map: texture, side: THREE.DoubleSide, alphaMap: aTexture, alphaTest: 0.09, alphaToCoverage: false, transparent: true });
+        //HairCard.texturedMaterial = new THREE.MeshStandardMaterial({ map: texture, side: THREE.DoubleSide, alphaMap: aTexture });
+        //HairCard.texturedMaterial.transparent = true;
         HairCard.currentMaterial = this.options.materialType;
 
 
@@ -398,15 +399,15 @@ export class App {
         let collision = new CollisionSphere([0, 1.4, 0.2], 0.05);
         collision.mesh.visible = this.currentModeIndex == this.modeIndeces.HairCard && this.options.showCollisionSpheres;
 
-        let collision2 = new CollisionSphere([0, 1.4, 0.3], 0.07);
-        collision2.mesh.visible = this.currentModeIndex == this.modeIndeces.HairCard && this.options.showCollisionSpheres;
+        //let collision2 = new CollisionSphere([0, 1.4, 0.3], 0.07);
+        //collision2.mesh.visible = this.currentModeIndex == this.modeIndeces.HairCard && this.options.showCollisionSpheres;
 
         this.modes[this.modeIndeces.HairCard] = new HairCard();
-        this.modes[this.modeIndeces.HairCard].initHairSystem(0, initPlanePos, this.options, null, [collision, collision2]);
+        this.modes[this.modeIndeces.HairCard].initHairSystem(0, initPlanePos, this.options, null, [collision]); //, collision2]);
         
 
         this.scene.add(collision.mesh);
-        this.scene.add(collision2.mesh);
+        //this.scene.add(collision2.mesh);
 
         this.modes[this.modeIndeces.HairCard].addToScene(this.scene);
         this.modes[this.modeIndeces.HairCard].setVisible(this.currentModeIndex == this.modeIndeces.HairCard);
@@ -539,12 +540,20 @@ export class App {
         this.modes[this.modeIndeces.Head].showCollisionSpheres(this.currentModeIndex == this.modeIndeces.Head && this.options.showCollisionSpheres);
         this.modes[this.modeIndeces.Head].showParticles(this.currentModeIndex == this.modeIndeces.HairCard && this.options.showParticles);
 
-
         this.options.damping =  this.guiCreateOptions.damping;
         this.options.k = this.guiCreateOptions.k;
         this.options.gravity =this.guiCreateOptions.gravity;
         this.options.mass = this.guiCreateOptions.mass;
         this.options.d = this.guiCreateOptions.d;
+
+        this.set();
+
+        let controllers = this.gui.controllers
+        for(let i = 0; i < controllers.length; i++)
+        {
+            controllers[i].updateDisplay();
+        }
+
 
         this.plane.visible = false;
 
